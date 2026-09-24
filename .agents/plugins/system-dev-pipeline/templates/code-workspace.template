@@ -1,0 +1,6 @@
+{
+  "settings": {
+    "python.languageServer": "Jedi",
+    "workbench.editorAssociations": {}
+  }
+}
