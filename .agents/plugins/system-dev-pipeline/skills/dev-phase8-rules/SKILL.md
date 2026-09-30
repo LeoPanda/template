@@ -17,4 +17,8 @@ description: "PHASE 8 ドキュメント改訂管理スキルの適用。本番�
      - `AGENTS.md`: Antigravity エージェント運用ルール
      - `GEMINI.md`: プロジェクト共通プロンプト・開発ルール
      - `.agents/rules/system-revision.md`: 今後の改訂時のドキュメント更新強制ルール
-   - 各ルールファイル内に `rules/システム改訂ルール.md` を参照・遵守する旨を明記するとともに、**「システムの修正・改訂時にはソースコードの変更を確実に反映させるため、修正後に必ず `docker compose down` および `docker compose up --build -d` を実行し、Docker上のコンテナをビルド・再構成すること」**のルールを含めてください。
+   - 各ルールファイル内に `rules/システム改訂ルール.md` を参照・遵守する旨を明記するとともに、**「システムの修正・改訂時にはソースコードの変更を確実に反映させるため、修正後に必ず `docker compose down` および `docker compose up --build -d` を実行し、Docker上のコンテナをビルド・再構成すること」**、および**「改訂完了時には `dev-git-release` スキルを実行して GitHub への本番反映と次期開発ブランチの刷新を行うこと」**のルールを含めてください。
+
+3. **GitHub本番リリースおよび開発ブランチ刷新（dev-git-release の発動）**:
+   - `dev-git-release` スキルを実行し、未コミット変更の自動確定、`.env` からのバージョン番号取得、`main` ブランチへの Squash Merge、GitHub（SSH経由）へのPush、旧 `feature` ブランチの削除、および最新 `main` からの新規 `feature` ブランチ作成を行ってください。
+

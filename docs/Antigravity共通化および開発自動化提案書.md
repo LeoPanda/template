@@ -53,14 +53,22 @@
 │   │   └── SKILL.md
 │   ├── dev-phase8-rules/                # PHASE 8: ドキュメント改訂管理設定
 │   │   └── SKILL.md
+│   ├── dev-git-init/                    # PHASE 4: Git初期化＆ブランチ作成
+│   │   └── SKILL.md
+│   ├── dev-git-release/                 # PHASE 8/改訂: 本番リリース＆ブランチ刷新
+│   │   └── SKILL.md
+│   ├── dev-db-overwrite/                # 保守: DB上書き＆コンテナデプロイ
+│   │   └── SKILL.md
 │   └── dev-doc-reviewer/                # 共通: ドキュメント相互整合性チェッカー
 │       └── SKILL.md
-└── templates/                           # doc_samples（要件定義書、設計書などの雛形）
+└── templates/                           # ドキュメント・設定雛形
     ├── 要件定義書.md
     ├── 技術要件定義書.md
     ├── ビジネスロジック仕様書.md
     ├── 画面仕様書.md
-    └── テーブルスキーマ定義書.md
+    ├── テーブルスキーマ定義書.md
+    ├── Git運用基準書.md
+    └── 本番適用作業手順書.md
 ```
 
 ---
@@ -74,11 +82,14 @@
 | **PHASE 1** | `dev-phase1-setup`        | ディレクトリ作成、`.env` 生成、`docs/` 雛形ファイルの自動配置。                                 |
 | **PHASE 2** | `dev-phase2-requirements` | 要件定義書の構造化補ファイル出力、AIによる要件精書。                                            |
 | **PHASE 3** | `dev-phase3-design`       | 基本設計書4種の雛形配置と要件からの自動生成、`dev-doc-reviewer` 連携による自動チェック。        |
-| **PHASE 4** | `dev-phase4-env-build`    | ローカル開発環境の構築、必要ライブラリのインストール、初期ビルド・起動確認。                    |
+| **PHASE 4** | `dev-phase4-env-build`    | ローカル開発環境の構築、必要ライブラリのインストール、初期ビルド・起動確認、Git運用基準書の配置、Git管理初期化。 |
+| **PHASE 4** | `dev-git-init`            | `docs/Git運用基準書.md` の配置確認、Git初期化（`main`）、SSHリモート設定、基点コミット作成、`feature` ブランチ作成。 |
 | **PHASE 5** | `dev-phase5-walkthrough`  | システム動作確認、デバッグ・修正、修正後の設計書不整合自動レビュー。                            |
 | **PHASE 6** | `dev-phase6-testing`      | 自動テストコード生成、シナリオテスト計画書作成、テスト自動実行およびエラー自動修正ループ。      |
 | **PHASE 7** | `dev-phase7-release`      | `本番適用作業手順書.md` の自動生成、リリース実行、Cloud Run / IAP / IAMセキュリティ設定の検証。 |
 | **PHASE 8** | `dev-phase8-rules`        | リポジトリルートへの `AGENTS.md`、`GEMINI.md`、`.agents/rules/system-revision.md` の自動適用。  |
+| **PHASE 8** | `dev-git-release`         | 未コミット確定、バージョン取得、`main` への Squash Merge、GitHub Push、旧 `feature` 削除と新 `feature` 再作成。 |
+| **保守**    | `dev-db-overwrite`        | 本番DBのローカル上書き、改修後のコンテナ本番デプロイ。                                          |
 | **共通**    | `dev-doc-reviewer`        | `docs/` 配下の全ドキュメント間の整合性チェック、不整合箇所のArtifacts化と自動補正。             |
 
 ---

@@ -13,6 +13,8 @@
     "dev-phase7-release",
     "dev-phase8-rules",
     "dev-doc-reviewer",
-    "dev-db-overwrite"
+    "dev-db-overwrite",
+    "dev-git-init",
+    "dev-git-release"
   ]
 }

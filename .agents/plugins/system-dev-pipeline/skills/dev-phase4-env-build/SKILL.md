@@ -37,5 +37,6 @@ description: "PHASE 4 開発環境・システム構築スキル。設計書に�
    - **【重要】修正時のDockerコンテナ再構成徹底ルール**:
      PHASE 4以降、プログラムコードや設定ファイル等のシステム修正・変更を行った場合は、ソースの変更が確実にコンポーネントに反映されるようにするため、**必ず `docker compose down` を実行した後に `docker compose up --build -d` を実行し、Docker上のコンテナをビルド・再構成する**こと。
 
-4. **Git 管理設定**:
-   - Gitリポジトリを初期化 (`git init`) し、適切な `.gitignore` を配置して初回コミットを実行してください。
+4. **Git 管理設定（Git運用基準書の配置と dev-git-init の発動）**:
+   - プラグインの `templates/Git運用基準書.md` をプロジェクトの `docs/Git運用基準書.md` へコピー・配置してください。
+   - `dev-git-init` スキルを実行し、Gitの初期化（`main` ブランチ）、GitHubリモート設定（SSH接続）、`docs/Git運用基準書.md` を含む初期ファイルの基点コミット作成、および開発用 `feature` ブランチへの切り替えを行ってください。
