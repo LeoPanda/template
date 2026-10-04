@@ -1,8 +1,13 @@
 {
   "name": "system-dev-pipeline",
-  "version": "1.0.0",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン（PHASE 1〜8）",
+  "version": "1.1.0",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン（PHASE 1〜8、サブエージェント協調対応）",
   "author": "Antigravity Workflow Automation",
+  "agents": [
+    "architect",
+    "ui-designer",
+    "qa-engineer"
+  ],
   "skills": [
     "dev-phase1-setup",
     "dev-phase2-requirements",

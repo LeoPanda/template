@@ -1,0 +1,33 @@
+# テンプレート昇格候補ログ (TEMPLATE_PROMOTIONS)
+
+本ファイルは、プロジェクト開発・改訂中に発生した「汎用的な知見・落とし穴（Tier 2: Universal / Template昇格候補）」を一時的に蓄積するバッファです。  
+PHASE 8（初回リリース時）またはシステム改訂完了時に、👑 コンダクターが本ファイルの内容を元にユーザーへ昇格提案を行い、明示的な承認を経てテンプレート（`.agents/plugins/system-dev-pipeline/`）へ反映します。
+
+---
+
+## 昇格候補一覧
+
+| ID | 関連ロール | タイトル | 発生フェーズ/契機 | ステータス | 判定日 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+
+---
+
+## 詳細知見ログ
+
+<!--
+知見の追加フォーマット例:
+
+### [K-ROLE-001]: [タイトル]
+- **種別**: [失敗・落とし穴 (Pitfall) / 成功パターン (Best Practice)]
+- **関連ロール**: [👑 conductor / 📐 architect / 🎨 ui-designer / 🛡️ qa-engineer / 共通]
+- **発生状況 (Context & Condition)**:
+  - どのような技術スタック、フェーズ、またはコマンド実行時に発生したか
+- **現象・落とし穴 (Problem / Trap)**:
+  - どのようなエラーや不整合が発生したか
+- **根本原因 (Root Cause)**:
+  - なぜその問題が生じたか
+- **処方箋・ルール化 (Prescription / Prevention Rule)**:
+  - 次回からエージェントはどう行動・記述すべきか
+- **推奨反映先**: [rules/dev-process-standards.md / agents/<role>.md / templates/<doc>.md]
+- **ステータス**: [候補 (Pending Review) / 承認 (Approved) / 保留 (Hold) / 却下 (Rejected)]
+-->
