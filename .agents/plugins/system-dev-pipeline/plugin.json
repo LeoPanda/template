@@ -1,10 +1,12 @@
 {
   "name": "system-dev-pipeline",
-  "version": "1.1.0",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン（PHASE 1〜8、サブエージェント協調対応）",
+  "version": "2.1.0",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン（PHASE 1〜8、5大エージェント協調、3大レビューゲート、WikiSkill自己進化対応）",
   "author": "Antigravity Workflow Automation",
   "agents": [
+    "conductor",
     "architect",
+    "backend-engineer",
     "ui-designer",
     "qa-engineer"
   ],
@@ -12,14 +14,22 @@
     "dev-phase1-setup",
     "dev-phase2-requirements",
     "dev-phase3-design",
+    "dev-review-arch",
     "dev-phase4-env-build",
     "dev-phase5-walkthrough",
+    "dev-review-code",
     "dev-phase6-testing",
+    "dev-review-system",
     "dev-phase7-release",
     "dev-phase8-rules",
     "dev-doc-reviewer",
-    "dev-db-overwrite",
+    "wiki-maintainer",
+    "wiki-proposer",
+    "wiki-compactor",
+    "dev-metrics-collector",
     "dev-git-init",
-    "dev-git-release"
+    "dev-git-release",
+    "dev-db-overwrite",
+    "dev-upgrade-v1-to-v2"
   ]
 }

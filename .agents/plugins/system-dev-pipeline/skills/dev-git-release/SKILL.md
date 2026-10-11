@@ -1,16 +1,19 @@
 ---
 name: dev-git-release
-description: "GitHub本番リリースおよび開発ブランチ刷新スキル。featureブランチの変更をmainへmerge squashし、.envのバージョンを付与してcommit & pushを行い、featureブランチを削除・再作成する。"
+description: "GitHub本番リリースおよび開発ブランチ刷新スキル。featureブランチの変更をmainへmerge squashし、バージョンタグを付与してcommit & pushを行い、featureブランチを削除・再作成する（コンダクター専任）。"
 ---
 
 # dev-git-release: GitHub本番リリースおよび開発ブランチ刷新スキル
 
-- **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`)（決定論的ツール/スキル）
+- **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (専任実行)
 
 PHASE 8（本番リリースおよびドキュメント改訂管理ルール適用時）、および以後のシステム改訂完了時に発動し、変更を1コミットに集約してGitHubの `main` ブランチへ公開し、次期改訂用の `feature` ブランチを自動再作成してください。
 
+---
+
 ## 実行前提条件
 - プロジェクトディレクトリ直下で実行すること。
+- サブエージェントからの実行は厳格に禁止（コンダクター専任）。
 - GitHub接続用のSSH Keyが端末に設定済みであること。
 
 ---
@@ -22,7 +25,6 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    ```bash
    git branch --show-current
    ```
-   もし `feature` でない場合は、作業中のブランチ状況を確認し、必要に応じて `git checkout feature` を行ってください。
 2. 作業ツリー内の未コミット変更（新規・修正・削除ファイル）を確認してください。
    ```bash
    git status --porcelain
@@ -36,11 +38,11 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
 ### 2. バージョン番号の取得
 1. `.env`（または `.env.production`）ファイルからバージョン番号を抽出してください。
    ```bash
-   grep -E '^(APP_)?VERSION=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'"
+   VERSION=$(grep -E '^(APP_)?VERSION=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'")
    ```
 2. バージョン番号が取得できない場合は、デフォルトとして `1.0.0` を設定するか、ユーザーにバージョン番号の確認を求めてください。
 
-### 3. 本番ブランチへの統合（Squash Merge）とコミット
+### 3. 本番ブランチへの統合（Squash Merge）とコミット・タグ付与
 1. 本番ブランチ `main` に切り替えてください。
    ```bash
    git checkout main
@@ -53,13 +55,17 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    ```bash
    git commit -m "Release v${VERSION}"
    ```
+4. リリースタグを付与してください。
+   ```bash
+   git tag -a "v${VERSION}" -m "Release v${VERSION}"
+   ```
 
 ### 4. GitHubへのプッシュ（SSH接続）
-1. GitHubのリモートリポジトリ（`origin`）へ `main` ブランチをプッシュしてください。
+1. GitHubのリモートリポジトリ（`origin`）へ `main` ブランチおよびタグをプッシュしてください。
    ```bash
    git push -u origin main
+   git push origin "v${VERSION}"
    ```
-   ※既にアップストリームが設定済みの場合は `git push origin main` を実行。
 
 ### 5. 開発ブランチの刷新（削除と再作成）
 1. 旧 `feature` ブランチを削除してください。

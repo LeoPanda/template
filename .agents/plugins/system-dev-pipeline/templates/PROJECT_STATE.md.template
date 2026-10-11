@@ -2,7 +2,10 @@
 
 - **プロジェクト名**: {{PROJECT_NAME}}
 - **現在のステータス**: PHASE_1_SETUP
+- **システム展開プロファイル**: [Profile A: クラウド公開 / Profile B: ローカル常駐 / Profile C: 個人小規模 / Profile D: モバイル]
 - **現行バージョン**: v{{APP_VERSION}}
+- **EXECUTION_MODE**: {{EXECUTION_MODE}} <!-- [GLOBAL_PLUGIN / LOCAL_STANDALONE] -->
+- **TEMPLATE_SOURCE**: {{TEMPLATE_SOURCE}}
 - **現在の作業ブランチ**: main
 - **最終更新日時**: {{UPDATED_AT}}
 - **最終更新者**: 👑 プロジェクトコンダクター
@@ -13,10 +16,12 @@
 
 - [ ] **PHASE 1: プロジェクトの準備**
   - [x] ディレクトリ・環境設定展開 (`dev-phase1-setup`)
-  - [x] `PROJECT_STATE.md` 初期化
-  - [x] `TEMPLATE_PROMOTIONS.md` 初期配置
+  - [x] 永続ナレッジ領域初期化 (`wiki/patterns/{local,universal,rejected}`, `wiki/archive/`)
+  - [x] メトリクス集計領域初期化 (`metrics/turns/`、`.gitignore` 自動登録)
+  - [x] 知見昇格バッファ初期配置 (`TEMPLATE_PROMOTIONS.md`)
+  - [x] `PROJECT_STATE.md` 初期化 (EXECUTION_MODE 記録)
 - [ ] **PHASE 2: 要件定義**
-  - [ ] 📐 `architect`: `docs/要件定義書.md` 作成・精査
+  - [ ] 📐 `architect`: `docs/要件定義書.md` 作成・精査（展開プロファイル選定）
   - [ ] 👤 ユーザー: Open Questions 回答
   - [ ] **【承認ゲート】👤 ユーザー: 要件定義完了の明示的承認** (承認日: )
 - [ ] **PHASE 3: 基本設計書の作成と整合性チェック**
@@ -24,30 +29,43 @@
   - [ ] 📐 `architect`: `docs/テーブルスキーマ定義書.md` 作成
   - [ ] 📐 `architect`: `docs/ビジネスロジック仕様書.md` 作成
   - [ ] 🎨 `ui-designer`: `docs/画面仕様書.md` 作成
-  - [ ] 🛡️ `qa-engineer`: `dev-doc-reviewer` 整合性多次元クロスチェック (エラー0件確認)
+  - [ ] 🛡️ `qa-engineer`: `dev-doc-reviewer` 整合性多次元クロスチェック (不整合0件確認)
+  - [ ] 🛡️ `qa-engineer`: `dev-review-arch` 基本設計レビュー (判定: PASS / CRITICAL: 0件, MAJOR: 0件)
   - [ ] **【承認ゲート】👤 ユーザー: 基本設計完了の明示的承認** (承認日: )
 - [ ] **PHASE 4: 開発環境とシステム構築**
-  - [ ] 👑 コンダクター: Docker環境構築・バックエンドAPI/ロジック実装
+  - [ ] 👑 コンダクター: Docker環境構築・統括
+  - [ ] 💻 `backend-engineer`: バックエンドAPI・DBモデル・ビジネスロジック実装
   - [ ] 🎨 `ui-designer`: フロントエンド画面・コンポーネント実装
-  - [ ] ⚙️ `dev-git-init`: Gitリポジトリ初期化 (`main` 初回コミット、`feature` 作成・チェックアウト)
+  - [ ] ⚙️ `dev-git-init`: Gitリポジトリ初期化 (`.gitignore` 包含、`main` 初回コミット、`feature` 作成・チェックアウト)
   - [ ] 👑 コンダクター: コンテナ初回ビルド・疎通確認 (`docker compose up --build -d`)
 - [ ] **PHASE 5: ウォークスルー動作確認とデバッグ**
   - [ ] 👤 ユーザー: 画面操作・機能検証
-  - [ ] 👑 コンダクター: 指摘不具合修正・コンテナ再構成 (`docker compose down` → `up --build -d`)
-  - [ ] 📐 `architect`: 最新コードを正としたAPI仕様同期
+  - [ ] 👑 コンダクター: 指摘不具合修正統括（BE: `backend-engineer`, FE: `ui-designer`）
+  - [ ] 📐 `architect`: 最新コードを正としたAPI仕様同期 (`docs/バックエンドAPI仕様書.md`)
   - [ ] 🛡️ `qa-engineer`: ドキュメント整合性再確認
   - [ ] **【承認ゲート】👤 ユーザー: ウォークスルー完了の明示的承認** (承認日: )
+- [ ] **PHASE 5.5: コード品質・整合性レビュー & リファクタリング**
+  - [ ] 🛡️ `qa-engineer`: `dev-review-code` 実行 (判定: CLEAN / REFACTOR RECOMMENDED)
+  - [ ] 💻 `backend-engineer` / 🎨 `ui-designer`: 提案Diff反映・重複排除・型安全性是正
+  - [ ] 👑 コンダクター: コンテナ再ビルド・疎通確認
 - [ ] **PHASE 6: スルーテスト環境の構築と実施**
   - [ ] 🛡️ `qa-engineer`: `docs/plans/シナリオテスト計画書.md` 作成
   - [ ] 🛡️ `qa-engineer`: 自動テスト実行・修復ループ (成功率100%達成)
+  - [ ] 🛡️ `qa-engineer`: Wiki Maintainer によるエラー根本原因（RCA）記録 (`wiki/patterns/`)
   - [ ] **【承認ゲート】👤 ユーザー: リリース準備移行の明示的承認** (承認日: )
 - [ ] **PHASE 7: 本番リリース**
   - [ ] 👑 コンダクター: `docs/plans/本番適用作業手順書.md` 作成
+  - [ ] 🛡️ `qa-engineer`: `dev-review-system` システム総合レビュー (判定: RELEASE APPROVED)
   - [ ] 👑 コンダクター: 本番環境（Cloud Run等）初回デプロイ実行
   - [ ] 🛡️ `qa-engineer`: IAM / IAP セキュリティ設定監査
   - [ ] **【承認ゲート】👤 ユーザー: 本番稼働確認の明示的承認** (承認日: )
-- [ ] **PHASE 8: ドキュメント改訂管理の開始**
+- [ ] **PHASE 8: ドキュメント改訂管理・自己進化の開始**
+  - [ ] 👑 コンダクター: 定量メトリクス集計 (`dev-metrics-collector`)
+  - [ ] 👑 コンダクター: `wiki-proposer` によるスキル改修案立案 & `PURPOSE.md` 生成
+  - [ ] 🛡️ `qa-engineer`: 複合検証ゲート実行 (判定: Adopted / Rejected)
+  - [ ] 👑 コンダクター: `wiki-compactor` によるWiki整理・枝刈り
   - [ ] **【承認ゲート】👤 ユーザー: 知見昇格レビューの明示的承認 (./TEMPLATE_PROMOTIONS.md)** (承認日: )
+  - [ ] 👑 コンダクター: EXECUTION_MODE に応じた知見昇格実行 (パッチ出力 or プラグイン直接反映)
   - [ ] ⚙️ `dev-git-release`: `feature` を `main` へ Squash Merge (`Release v1.0.0`)、Push、次期 `feature` 切り直し
   - [ ] ⚙️ `dev-phase8-rules`: 改訂運用ルールファイル群の配置
   - [ ] 👑 コンダクター: ステータスを `PRODUCTION_ACTIVE` へ移行
@@ -60,6 +78,7 @@
 - **進行中の改訂依頼番号**: なし
 - **現行改訂ターン番号**: -
 - **知見昇格ステータス**: 未昇格
+- **コード品質レビュー判定**: -
 - **直近の改訂レポート**: なし
 
 ### 改訂履歴テーブル
@@ -68,17 +87,39 @@
 
 ---
 
-## 3. 未決事項および決定事項ログ (Open Questions & Decisions)
+## 3. WikiSkill & ナレッジ自己進化ステータス
 
-### 3.1 未決事項 (Open Questions: ユーザー確認待ち)
+- **Wiki登録パターン数**:
+  - Tier 1 (プロジェクト固有): 0 件 (`wiki/patterns/local/`)
+  - Tier 2 (テンプレート共通): 0 件 (`wiki/patterns/universal/`)
+- **直近の自己進化サイクル**:
+  - 実行日: -
+  - 対象スキル: -
+  - 判定結果: -
+  - 理由/エビデンス: `wiki/logs.md` 参照
+
+---
+
+## 4. プロジェクト定量メトリクスサマリ
+
+- **トークン効率**: サブエージェント委譲率 -%、メインコンテキスト消費残 -%
+- **品質・手戻り**: スルーテスト初回合格率 -%、レビュー指摘総数 0 件
+- **コード健全性**: ファイル行数上限違反 0件、重複コード削減率 -%
+- **開発リードタイム**: 全フェーズ所要ターン数 - ターン、自動修復平均収束 - 回
+
+---
+
+## 5. 未決事項および決定事項ログ (Open Questions & Decisions)
+
+### 5.1 未決事項 (Open Questions: ユーザー確認待ち)
 - *未決事項はありません*
 
-### 3.2 決定済み事項ログ (Decided)
+### 5.2 決定済み事項ログ (Decided)
 - *決定事項はありません*
 
 ---
 
-## 4. システム・インフラ・Git状態
+## 6. システム・インフラ・Git状態
 
 - **Git状態**:
   - 現在のブランチ: main

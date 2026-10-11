@@ -1,0 +1,27 @@
+# コード品質レビュー及びリファクタリング提案書
+
+- **レビュー実施日**: {{REVIEW_DATE}}
+- **実施ロール**: 🧹 コード品質・リファクタリング監査役 (qa-engineer)
+- **対象ソース**: フロントエンド / バックエンド / スクリプト全域
+- **総合判定**: {{OVERALL_STATUS}} <!-- [CLEAN / REFACTOR RECOMMENDED / BLOCKED] -->
+
+## 1. 静的解析・健全性メトリクス
+- 最大ファイル行数: {{MAX_FILE_LINES}} 行 (`{{MAX_FILE_PATH}}`)
+- デッドコード検出数: {{DEAD_CODE_COUNT}} 件
+- 一時的デバッグログ残存数: {{DEBUG_LOG_COUNT}} 件
+- 重複コードブロック検出数: {{DUPLICATE_CODE_COUNT}} 件
+
+## 2. リファクタリング提案とDiff
+### 改善 1: [改善項目名]
+- **対象ファイル**: `path/to/file`
+- **改善概要**: 概要
+- **Unified Diff**:
+```diff
+--- a/path/to/file
++++ b/path/to/file
+@@ -1,5 +1,5 @@
+```
+
+## 3. 適用判断
+- [ ] 👑 コンダクターによるDiff適用確認
+- [ ] 実行環境/コンテナ再構成 及び 疎通テスト

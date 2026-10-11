@@ -1,5 +1,8 @@
 # Git運用基準書（ブランチ戦略・リリース手順）
 
+- **主担当エージェント**: 👑 プロジェクトコンダクター専任 (`conductor`) (`dev-git-init`, `dev-git-release`)
+- **禁止事項**: サブエージェント（`architect`, `backend-engineer`, `ui-designer`, `qa-engineer`）によるGit操作コマンド実行は厳禁（二重防御ガードレール）
+
 本ドキュメントは、システム開発・保守時におけるGitブランチの運用基準、コミット・マージ規約、およびGitHub連携手順を定めたものです。
 
 ---
@@ -53,7 +56,7 @@ gitGraph
    - リモートURL（`origin`）の存在を確認（`git remote get-url origin`）。
    - 未設定の場合、プロジェクト名を取得し `git remote add origin git@github.com:<GitHub-Username>/<Project-Name>.git` を設定。
 4. **基点コミットの作成**:
-   - `docs/Git運用基準書.md`、`.gitignore`、ライセンス、初期ドキュメント等の初期設定ファイルをステージングし、`main` 上で初期コミットを作成（例: `feat: initial project setup`）。
+   - `docs/Git運用基準書.md`、`.gitignore`（`metrics/turns/` 自動除外設定を含む）、ライセンス、初期ドキュメント等の初期設定ファイルをステージングし、`main` 上で初期コミットを作成（例: `feat: initial project setup`）。
 5. **開発ブランチの作成と移動**:
    - `git checkout -b feature` を実行。
    - 以降の実装作業はすべて `feature` 上で進行。

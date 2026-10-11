@@ -1,16 +1,19 @@
 ---
 name: dev-git-init
-description: "Git初期化および開発ブランチ作成スキル。Git運用基準書のdocs配下への配置、Gitの初期化、GitHub SSHリモートの設定、mainブランチでの基点コミット作成、およびfeatureブランチへの切り替えを行う。"
+description: "Git初期化および開発ブランチ作成スキル。Git運用基準書の配置、.gitignore設定 (metrics/turns/除外)、初期構成コミット、およびfeatureブランチへの切り替えを行う（コンダクター専任）。"
 ---
 
 # dev-git-init: Git初期化および開発ブランチ作成スキル
 
-- **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`)（決定論的ツール/スキル）
+- **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (専任実行)
 
 PHASE 4の環境構築およびシステム初期実装完了時に発動し、Git運用基準書の配置、Gitリポジトリの初期化と開発ブランチ（`feature`）の切り出しを安全に実行してください。
 
+---
+
 ## 実行前提条件
 - プロジェクトディレクトリ直下で実行すること。
+- サブエージェントからの実行は禁止（コンダクター専任）。
 - GitHub接続用のSSH Keyが端末に設定済みであること。
 
 ---
@@ -37,22 +40,24 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
    git remote get-url origin
    ```
 2. 未設定の場合：
-   - システムのルートディレクトリ名（プロジェクト名）を取得してください（例: `basename "$PWD"`）。
-   - GitHubのユーザー名/アカウント名を確認してください（`git config user.name` または SSH接続テスト `ssh -T git@github.com`、不明な場合はユーザーに確認）。
-   - 以下の形式でSSH接続リモートを追加してください。
+   - システムのルートディレクトリ名（プロジェクト名）を取得してください。
+   - GitHubのユーザー名/アカウント名を確認してください。
+   - 以下の形式でSSH接続リモートを追加してください：
      ```bash
      git remote add origin git@github.com:<GitHub-Username>/<Project-Name>.git
      ```
 
 ### 4. 初期設定ファイルのステージングと基点コミット
-1. `.gitignore` が適切に配置されているか確認してください（`.env`, `node_modules/`, `__pycache__/`, `.DS_Store` 等が除外対象になっていること）。
-2. `docs/Git運用基準書.md` を含む初期のファイル群をステージングしてください。
+1. `.gitignore` が適切に設定されているか確認してください：
+   - `.env`, `node_modules/`, `__pycache__/`, `.DS_Store`
+   - **`metrics/turns/`** (ターン別一次データ除外)
+2. `PROJECT_STATE.md`, `TEMPLATE_PROMOTIONS.md`, `wiki/` 構造, `docs/` 配下を含む初期構成ファイルをステージングしてください。
    ```bash
    git add .
    ```
 3. `main` ブランチ上で初期基点コミットを作成してください。
    ```bash
-   git commit -m "feat: initial project setup"
+   git commit -m "feat: initial project setup (V2.1 pipeline)"
    ```
 
 ### 5. 開発ブランチ `feature` の作成と移動
