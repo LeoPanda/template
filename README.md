@@ -209,15 +209,15 @@ V2.1では、新たに **Backend Engineer（BE実装専任）** を追加した 
 ```mermaid
 flowchart TD
     P1["PHASE 1: dev-phase1-setup\n(環境初期化・受皿生成・状態票展開)"] --> P2["PHASE 2: dev-phase2-requirements\n(📐 Architect: 要件定義・プロファイル選定)"]
-    P2 -->|【承認ゲート】要件承認| P3["PHASE 3: dev-phase3-design\n(📐 Architect: 3大設計書 + 🎨 UI: 画面仕様書)"]
+    P2 -->|"【承認ゲート】要件承認"| P3["PHASE 3: dev-phase3-design\n(📐 Architect: 3大設計書 + 🎨 UI: 画面仕様書)"]
     P3 --> R3["PHASE 3 ゲート: dev-review-arch\n(🛡️ QA: 基本設計レビュー & 是正ループ)"]
-    R3 -->|【承認ゲート】設計承認 (PASS)| P4["PHASE 4: dev-phase4-env-build\n(👑 Docker統括 + 💻 BE並行実装 + 🎨 FE並行実装 + ⚙️ Git初期化)"]
+    R3 -->|"【承認ゲート】設計承認 (PASS)"| P4["PHASE 4: dev-phase4-env-build\n(👑 Docker統括 + 💻 BE並行実装 + 🎨 FE並行実装 + ⚙️ Git初期化)"]
     P4 --> P5["PHASE 5: dev-phase5-walkthrough\n(動作確認 + 📐 API仕様逆同期)"]
     P5 --> R5["PHASE 5.5 ゲート: dev-review-code\n(🛡️ QA: コード品質レビュー & Diff提案)"]
-    R5 -->|【承認ゲート】コード品質承認 (CLEAN)| P6["PHASE 6: dev-phase6-testing\n(🛡️ QA: シナリオテスト自動修復 + 障害時 RCA永続化)"]
+    R5 -->|"【承認ゲート】コード品質承認 (CLEAN)"| P6["PHASE 6: dev-phase6-testing\n(🛡️ QA: シナリオテスト自動修復 + 障害時 RCA永続化)"]
     P6 --> R7["PHASE 7 ゲート: dev-review-system\n(🛡️ QA: システム総合レビュー & 稼働耐性監査)"]
-    R7 -->|【承認ゲート】総合承認 (APPROVED)| P7["PHASE 7: dev-phase7-release\n(👑 本番デプロイ + セキュリティ検証)"]
-    P7 -->|【承認ゲート】本番稼働承認| P8["PHASE 8: dev-phase8-rules\n(📊 メトリクス集計 + 🧠 Wiki自己進化 + 💡 知見昇格 + ⚙️ Gitリリース)"]
+    R7 -->|"【承認ゲート】総合承認 (APPROVED)"| P7["PHASE 7: dev-phase7-release\n(👑 本番デプロイ + セキュリティ検証)"]
+    P7 -->|"【承認ゲート】本番稼働承認"| P8["PHASE 8: dev-phase8-rules\n(📊 メトリクス集計 + 🧠 Wiki自己進化 + 💡 知見昇格 + ⚙️ Gitリリース)"]
 ```
 
 ### 1. プロジェクト初期化（PHASE 1）
@@ -319,14 +319,14 @@ dev-upgrade-v1-to-v2 スキルを実行し、本プロジェクトをV2.1パイ�
 ```mermaid
 flowchart TD
     R_REQ["👤 ユーザー: 改訂依頼入力\n(例: 改訂依頼: 1.1.001 〇〇機能追加)"] --> R_PLAN["👑 Conductor / 📐 Architect\nImplementation Plan 作成"]
-    R_PLAN -->|【承認ゲート】Plan承認| R_IMPL["💻 BE ＋ 🎨 UI\n完全分離 並行改訂実装"]
+    R_PLAN -->|"【承認ゲート】Plan承認"| R_IMPL["💻 BE ＋ 🎨 UI\n完全分離 並行改訂実装"]
     R_IMPL --> R_CODE["🛡️ QA: dev-review-code\nコード品質レビュー & Diff提案"]
-    R_CODE -->|【承認ゲート】品質承認 (CLEAN)| R_REBUILD["⚙️ Conductor: Diff適用\nコンテナ再構成徹底 (down & up --build -d)"]
+    R_CODE -->|"【承認ゲート】品質承認 (CLEAN)"| R_REBUILD["⚙️ Conductor: Diff適用\nコンテナ再構成徹底 (down & up --build -d)"]
     R_REBUILD --> R_TEST{"シナリオテスト要否"}
-    R_TEST -->|要| R_ST["🛡️ QA: dev-phase6-testing\n(手戻り時: wiki-maintainer RCA記録)"]
-    R_TEST -->|不要 (軽微修正)| R_SYS["🛡️ QA: dev-review-system\nシステム総合レビュー (RELEASE APPROVED)"]
+    R_TEST -->|"要"| R_ST["🛡️ QA: dev-phase6-testing\n(手戻り時: wiki-maintainer RCA記録)"]
+    R_TEST -->|"不要 (軽微修正)"| R_SYS["🛡️ QA: dev-review-system\nシステム総合レビュー (RELEASE APPROVED)"]
     R_ST --> R_SYS
-    R_SYS -->|【承認ゲート】本番承認| R_DEP["👑 Conductor: 本番適用作業 & 検証\n(本番適用作業手順書準拠)"]
+    R_SYS -->|"【承認ゲート】本番承認"| R_DEP["👑 Conductor: 本番適用作業 & 検証\n(本番適用作業手順書準拠)"]
     R_DEP --> R_FIN["📊 dev-metrics-collector 集計\n⚙️ dev-git-release (Squash Merge & タグ付与)"]
 ```
 
