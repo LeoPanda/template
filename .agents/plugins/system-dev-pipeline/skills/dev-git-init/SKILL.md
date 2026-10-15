@@ -1,6 +1,6 @@
 ---
 name: dev-git-init
-description: "Git初期化および開発ブランチ作成スキル。Git運用基準書の配置、.gitignore設定 (metrics/turns/除外)、初期構成コミット、およびfeatureブランチへの切り替えを行う（コンダクター専任）。"
+description: "Git初期化および開発ブランチ作成スキル。Git運用基準書の配置、.gitignore設定 (wiki/, metrics/ 除外)、初期構成コミット、およびfeatureブランチへの切り替えを行う（コンダクター専任）。"
 ---
 
 # dev-git-init: Git初期化および開発ブランチ作成スキル
@@ -50,14 +50,14 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
 ### 4. 初期設定ファイルのステージングと基点コミット
 1. `.gitignore` が適切に設定されているか確認してください：
    - `.env`, `node_modules/`, `__pycache__/`, `.DS_Store`
-   - **`metrics/turns/`** (ターン別一次データ除外)
-2. `PROJECT_STATE.md`, `TEMPLATE_PROMOTIONS.md`, `wiki/` 構造, `docs/` 配下を含む初期構成ファイルをステージングしてください。
+   - **`wiki/`**, **`metrics/`** (知見収集・メトリクス領域のGit除外)
+2. `PROJECT_STATE.md`, `TEMPLATE_PROMOTIONS.md`, `docs/` 配下を含む初期構成ファイルをステージングしてください（※ `wiki/`, `metrics/` は `.gitignore` により自動除外されます）。
    ```bash
    git add .
    ```
 3. `main` ブランチ上で初期基点コミットを作成してください。
    ```bash
-   git commit -m "feat: initial project setup (V2.1 pipeline)"
+   git commit -m "feat: initial project setup (V2.2 pipeline)"
    ```
 
 ### 5. 開発ブランチ `feature` の作成と移動

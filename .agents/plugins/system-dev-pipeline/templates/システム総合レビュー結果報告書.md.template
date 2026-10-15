@@ -1,17 +1,19 @@
-# システム総合レビュー結果報告書
+# システム総合レビュー結果報告書 (V2.2)
 
 - **レビュー実施日**: {{REVIEW_DATE}}
 - **実施ロール**: 🛡️ 本番リリース統括監査役 (qa-engineer)
-- **対象プロファイル**: {{DEPLOYMENT_PROFILE}}
+- **対象プロファイル**: {{DEPLOYMENT_PROFILE}} <!-- [Profile A / B / C / D] -->
 - **対象バージョン**: {{APP_VERSION}}
 - **総合判定**: {{OVERALL_STATUS}} <!-- [RELEASE APPROVED / RELEASE BLOCKED] -->
 
 ## 1. 必須検証チェックリスト (Zero Tolerance)
-- [ ] 1. 平文パスワード・APIキーの完全排除
-- [ ] 2. プロファイル別セキュリティ境界の遵守 (非root実行、不要権限排除)
-- [ ] 3. ヘルスチェックエンドポイントの実装・正常応答
-- [ ] 4. 直前状態への巻き戻し/ロールバック手順の検証完了
-- [ ] 5. スルーテスト成功率100% (未解決不具合 0件)
+- [ ] 1. 本番用 .env.production で VITE_ENABLE_MOCK=false (モック無効化確認)
+- [ ] 2. 本番環境で DEBUG=False かつ IAP JWT署名検証が有効化
+- [ ] 3. entrypoint.sh による起動時 Alembic マイグレーション自動実行保証
+- [ ] 4. Litestream 同期ラグ監視エンドポイント (/api/internal/litestream/status) 正常稼働
+- [ ] 5. 平文パスワード・APIキーの完全排除
+- [ ] 6. スルーテスト成功率100% (未解決不具合 0件)
+- [ ] 7. 直前リビジョンへのロールバック手順実証
 
 ## 2. 環境稼働耐性評価
 - リソースフットプリント / コンテナ設定: 妥当性確認

@@ -1,7 +1,7 @@
 {
   "name": "system-dev-pipeline",
-  "version": "2.1.0",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン（PHASE 1〜8、5大エージェント協調、3大レビューゲート、WikiSkill自己進化対応）",
+  "version": "2.2.0",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V2.2（2層プロファイル体系、グランドデザイン規格準拠、Shift-Left静的スケルトン、Alembic・MSW・250行制限厳格運用）",
   "author": "Antigravity Workflow Automation",
   "agents": [
     "conductor",
@@ -29,7 +29,6 @@
     "dev-metrics-collector",
     "dev-git-init",
     "dev-git-release",
-    "dev-db-overwrite",
-    "dev-upgrade-v1-to-v2"
+    "dev-db-overwrite"
   ]
 }

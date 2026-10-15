@@ -13,7 +13,7 @@ description: "PHASE 8 において Tier 2 汎用Wikiパターンからスキル�
 
 ## 1. 入力情報
 - `./wiki/patterns/universal/` 配下の汎用知見パターン群（未昇格のもの）
-- 現行のスキル群（`.agents/plugins/system-dev-pipeline/skills/`）および開発規約（`rules/dev-process-standards.md`）
+- 現行のスキル群（`.agents/plugins/system-dev-pipeline/skills/`）および開発規約（`rules/AGENTS.md`）
 - `PROJECT_STATE.md`（特に `EXECUTION_MODE`: `GLOBAL_PLUGIN` または `LOCAL_STANDALONE`）
 
 ---
@@ -24,7 +24,7 @@ description: "PHASE 8 において Tier 2 汎用Wikiパターンからスキル�
 Tier 2 パターンを精査し、過剰適合（特定プロジェクトのみの個別コード名や変数名）を排除して、全プロジェクト共通で活用できる抽象ルールやベストプラクティスへと一般化・蒸留する。
 
 ### Step 2: 最小パッチ (Minimal Patch) の生成
-改善すべき対象スキル（`SKILL.md`）または開発規範（`rules/dev-process-standards.md`）を特定し、最小限の差分パッチを生成する。既存の指示構造を無暗に破壊してはならない。
+改善すべき対象スキル（`SKILL.md`）または開発規範（`rules/AGENTS.md`）を特定し、最小限の差分パッチを生成する。既存の指示構造を無暗に破壊してはならない。
 
 ### Step 3: `PURPOSE.md` の作成・更新
 変更対象スキルのディレクトリ直下に `PURPOSE.md`（例: `skills/dev-phase4-env-build/PURPOSE.md`）を作成または追記し、以下のメタデータを記録する：

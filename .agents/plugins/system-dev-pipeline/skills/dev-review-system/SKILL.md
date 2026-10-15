@@ -1,9 +1,9 @@
 ---
 name: dev-review-system
-description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼働耐性、セキュリティ、平文シークレット排除、ロールバック計画の完全性を総合監査するスキル。"
+description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼働耐性、セキュリティ、平文シークレット排除、本番モック排除二重防御、Alembic起動保証、ロールバック計画の完全性を総合監査するスキル。"
 ---
 
-# システム総合レビュー (System Comprehensive Review) スキル
+# システム総合レビュー (System Comprehensive Review) スキル V2.2
 
 - **主担当エージェント**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **委譲元 / 統括**: 👑 プロジェクトコンダクター (`conductor`)
@@ -15,10 +15,10 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ## 1. 入力成果物
 監査対象として以下のドキュメント・構成ファイルを読み込みます：
 - `docs/plans/本番適用作業手順書.md`
-- `Dockerfile`, `docker-compose.yml`
+- `Dockerfile`, `docker-compose.yml`, `entrypoint.sh`, `litestream.yml`
 - 環境変数設定雛形 (`.env.template`, 本番環境変数設定)
 - デプロイ設定スクリプト / IaC定義 (Cloud Run設定, GCP IAM/IAPポリシー等)
-- `docs/要件定義書.md`（システム展開プロファイル Profile A〜D）
+- `docs/要件定義書.md`（システム展開プロファイル: 2層プロファイル体系）
 
 ---
 
@@ -27,21 +27,37 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ### 必須検証チェックリスト（1件でも違反があれば即座に `RELEASE BLOCKED`）
 1. **平文シークレット完全排除 (Zero Secrets in Plaintext)**:
    - ソースコード、Dockerfile、`本番適用作業手順書.md` 内にAPIキー、パスワード、秘密鍵が平文で直接記載されていないか。
-2. **コンテナセキュリティ**:
+2. **本番モック無効化の二重防御 (Mock-Free Production Guarantee)**:
+   - 本番ビルド環境変数において `VITE_ENABLE_MOCK=false` が確実に注入されているか。
+   - 本番JSバンドルから MSW (`browser.ts`, `handlers.ts`) がツリーシェイキング等で排除または不活性化され、本番実行時にモック通信が一切走らない二重防御策が講じられているか。
+3. **コンテナセキュリティと非特権実行**:
    - rootユーザーによるコンテナ実行を禁止し、非特権ユーザー（`appuser` 等）で実行されているか。
    - 不要なポートが外部開放されていないか。
-3. **ヘルスチェックエンドポイントの存在**:
-   - オーケストレータ/ロードバランサ用の `/health` または `/api/health` エンドポイントが実装されているか。
-4. **ロールバック手順の完全性**:
-   - `本番適用作業手順書.md` に、デプロイ失敗時およびDBマイグレーション失敗時の具体的かつ実行可能なロールバック手順が記載されているか。
-5. **DBマイグレーションの破壊防止**:
+4. **起動時 Alembic マイグレーション保証**:
+   - コンテナ起動スクリプト（`entrypoint.sh` 等）で `alembic upgrade head` が本番起動前に確実に実行され、マイグレーション失敗時にプロセスが安全に異常終了するようになっているか。
+5. **ヘルスチェック・内部監視エンドポイントの存在**:
+   - オーケストレータ/ロードバランサ用の `/internal/health` および `/internal/litestream`（Profile A適用時）エンドポイントが実装され、監視対象に含まれているか。
+6. **ロールバック手順の完全性**:
+   - `本番適用作業手順書.md` に、デプロイ失敗時、DBマイグレーション失敗時、およびLitestream復元時の具体的かつ実行可能なロールバック手順が記載されているか。
+7. **DBマイグレーションの破壊防止**:
    - 不可逆なテーブルドロップやデータ喪失リスクがないか。
 
-### プロファイル別適合監査
-- **Profile A (Cloud Run / Public Web)**: IAP認証・IAM権限最小化、HTTPS強制、最大インスタンス数制限。
-- **Profile B (Local Standalone)**: データボリューム永続化設定、ホストポート競合回避、再起動ポリシー (`restart: unless-stopped`)。
-- **Profile C (Personal / Prototype)**: 最小構成の整合性、余計なリソースリークの有無。
-- **Profile D (Mobile / Edge)**: API認証トークンの安全な保存、通信暗号化。
+### 第2層: システム展開プロファイル別適合監査
+- **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**:
+  - IAP認証有効時、JWT署名検証（Google公開鍵による署名検証、aud/iss検証）が有効化されているか。
+  - Litestreamレプリケーション設定（バケット名、パス、同期監視 `/api/internal/litestream/status`）が正しく稼働しているか。
+  - Cloud Run 最大インスタンス数1（`max-instances=1`）が保証され、単一ライター保護が保たれているか。
+  - SQLite WALモードおよびバッチマイグレーション（`render_as_batch=True`）の稼働保証。
+- **Profile B (Web SSR / フルマネージドRDB型)**:
+  - Cloud SQL / PostgreSQL への接続プールおよびSSL暗号化接続設定。
+  - Alembicマイグレーションの複数インスタンス競合防止（起動時排他ロックまたはCI/CDパイプライン事前実行）。
+  - 水平オートスケール環境下でのセッション/キャッシュ外部化（Redis/Memorystore）。
+- **Profile C (静的MPA / 超軽量ツール型)**:
+  - 単一プロセス完結性および最小リソース設定の妥当性。
+  - 単一バイナリまたは静的配信設定における権限・ポート設定。
+- **Profile D (PCローカルデスクトップアプリ型)**:
+  - デスクトップ用ストレージアダプター（SQLite/LocalStore）のローカルパス権限および暗号化設定。
+  - OSネイティブAPI連携・配布パッケージ署名設定。
 
 ---
 
@@ -67,8 +83,11 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 - **生成ファイル**: docs/plans/システム総合レビュー結果報告書.md
 - **セキュリティ・稼働検証結果**:
   - 平文シークレット排除: PASS / FAIL
+  - 本番モック排除二重防御 (VITE_ENABLE_MOCK=false): PASS / FAIL
   - 非rootコンテナ実行: PASS / FAIL
-  - ヘルスチェック設定: PASS / FAIL
+  - entrypoint起動時Alembic保証: PASS / FAIL
+  - ヘルスチェック・内部監視設定 (/internal/health, /internal/litestream): PASS / FAIL
+  - IAP JWT署名検証設定: PASS / FAIL / N/A
   - ロールバック手順完全性: PASS / FAIL
 - **主な指摘事項**:
   - [指摘内容と修正必須要件（あれば）]

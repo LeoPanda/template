@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: runner
+    command: uvicorn core.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ../backend:/app/backend
+      - sqlite_data:/data
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - ALLOW_LOCAL_AUTH_BYPASS=True
+      - DATABASE_URL=sqlite:////data/app.db
+      - TZ=Asia/Tokyo
+    env_file:
+      - ../.env
+
+  frontend:
+    image: node:20-slim
+    working_dir: /app
+    volumes:
+      - ../frontend:/app
+    ports:
+      - "3000:3000"
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    environment:
+      - VITE_ENABLE_MOCK=true
+      - TZ=Asia/Tokyo
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
+
+volumes:
+  sqlite_data:

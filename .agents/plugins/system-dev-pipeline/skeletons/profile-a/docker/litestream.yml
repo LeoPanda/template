@@ -1,0 +1,8 @@
+dbs:
+  - path: /data/app.db
+    replicas:
+      - type: gcs
+        bucket: "${LITESTREAM_BUCKET}"
+        path: "db-replica"
+        retention: 720h  # 30日間スナップショット・WAL保持
+        sync-interval: 1s

@@ -1,9 +1,9 @@
 ---
 name: dev-phase8-rules
-description: "PHASE 8 メトリクス集計、Wiki進化提案、複合検証ゲート、知見昇格ルーティング、Git本番リリース、および改訂運用ルールの適用を行うスキル。"
+description: "PHASE 8 メトリクス集計、Wiki進化提案、複合検証ゲート、知見昇格ルーティング（2層プロファイル対応）、Git本番リリース、および改訂運用ルールの適用を行うスキル。"
 ---
 
-# PHASE 8: メトリクス集計・知見昇格と改訂管理体制への移行
+# PHASE 8: メトリクス集計・知見昇格と改訂管理体制への移行 V2.2
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **連携スキル**:
@@ -26,6 +26,7 @@ description: "PHASE 8 メトリクス集計、Wiki進化提案、複合検証ゲ
 
 ### 2. Wikiスキル自己進化提案と検証 (`wiki-proposer` 連携)
 1. `wiki-proposer` を実行し、`./wiki/patterns/universal/` 配下のTier 2知見から改善パッチを立案します。
+   - **V2.2 重点昇格観点**: 2層プロファイル体系（Profile A/B/C/D ＋ アドオン）、Alembicマイグレーション知見、直書きモック排除・MSW制御、フロント250行制限、Aware UTC等の新規ルールに関するプラクティスを優先抽出します。
 2. 対象スキルの `PURPOSE.md` を生成・更新します。
 3. 提案サマリを `./TEMPLATE_PROMOTIONS.md` に追記します。
 4. 🛡️ `qa-engineer` に複合検証ゲート（Gating）を実行させ、パッチの安全性を確認します。
@@ -54,3 +55,4 @@ description: "PHASE 8 メトリクス集計、Wiki進化提案、複合検証ゲ
 
 ### 7. 状態管理の更新
 - `PROJECT_STATE.md` のステータスを `PRODUCTION_ACTIVE` へ更新し、改訂管理体制への移行を完了してください。
+

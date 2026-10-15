@@ -1,3 +1,6 @@
 # Environment & Credentials
 .env
-doc_samples/
+
+# Knowledge & Metrics
+wiki/
+metrics/
