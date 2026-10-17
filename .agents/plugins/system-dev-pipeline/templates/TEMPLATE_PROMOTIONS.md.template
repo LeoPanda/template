@@ -1,41 +1,41 @@
-# 知見昇格レビュー用提示サマリ (TEMPLATE_PROMOTIONS)
+# 知見昇格レビュー用提示サマリ (TEMPLATE_PROMOTIONS V2.3)
 
-本ファイルは、プロジェクト開発・改訂中に獲得され、`./wiki/patterns/universal/` に永続化された「汎用知見（Tier 2: 全体共通知見）」を基に、👑 プロジェクトコンダクター（`wiki-proposer` 実行）が立案した改善パッチ・提案内容を、PHASE 8 においてユーザーが承認判断するための **「提示サマリ」** です。
-
----
-
-## 1. 昇格先ルーティング仕様 (EXECUTION_MODE 連動)
-
-ユーザー承認後、`PROJECT_STATE.md` に記録された `EXECUTION_MODE` に応じて安全に処理されます：
-- **`GLOBAL_PLUGIN` モード**:
-  - グローバル資産への直接書き込みを防止し、`./promotions/` ディレクトリ配下に差分パッチ（`./promotions/*.patch`）を自動出力します。
-- **`LOCAL_STANDALONE` モード**:
-  - ローカルプラグイン資産（`.agents/plugins/system-dev-pipeline/`）へ直接反映します。
+本ファイルは、プロジェクト開発・改訂中に獲得され、`./wiki/patterns/universal/` に一次記録された「汎用知見（Tier 2: 全体共通知見）」を基に、👑 プロジェクトコンダクター（`wiki-proposer`）が起案した **「標準化知見原票（Knowledge Claim MD: `CLAIM-*.md`）」** と、🛡️ `qa-engineer`（Semantic Auditor）による **「3段階意味的整合性監査（新・複合検証ゲート Gate 1〜4）」** の結果を提示するサマリです。
 
 ---
 
-## 2. 昇格提案一覧
+## 1. V2.3 知見昇格・Overlay 反映ルーティング仕様 (Patch-Free & Immutable Core)
 
-| 提案ID | 参照Wikiパターン | 対象スキル / ルール | 提案タイトル | 複合検証 (Gating) | ユーザー承認 | 判定日 |
-| :--- | :--- | :--- | :--- | :---: | :---: | :--- |
-| PROP-001 | PAT-ERR-001 | skills/dev-phase4-env-build | Docker compose down再構成の徹底 | PASS | [ ] 承認 / [ ] 却下 | - |
+ユーザーによる `ask_question` モーダル承認後、`PROJECT_STATE.md` の `EXECUTION_MODE` に応じて安全に処理されます（行番号依存の `.patch` や個別 `PURPOSE.md` は生成しません）：
+- **`GLOBAL_PLUGIN` モード（通常のアプリケーション開発時）**:
+  - 公式プラグイン（Immutable Core: `~/.gemini/config/plugins/system-dev-pipeline/`）は **1バイトも直接書き換えません**。
+  - 承認された標準化知見原票（`CLAIM-*.md`）を `~/.gemini/knowledge-hub/active_claims/` へ登録し、`scripts/pipeline-reconciler.sh --activate-claim` により **`~/.gemini/knowledge-hub/overlay/LOCAL_FEEDBACK_RULES.md`（上限80行）をクリーン再生成** します。これにより、同一PC環境の次案件から即座に新しい知見が有効化されます。
+- **`LOCAL_STANDALONE` モード（テンプレート正本自体の改訂時）**:
+  - 承認された知見をローカルプラグイン正本（`.agents/plugins/system-dev-pipeline/`）へインプレース統合し、`PIPELINE_MANIFEST.json` および `FEEDBACK_LEDGER.md` に系譜を記録します。
 
 ---
 
-## 3. 提案詳細および最小パッチ概要
+## 2. 標準化知見原票（Knowledge Claim MD）昇格提案一覧
+
+| 原票 Claim ID | 元パターンID | 対象プロファイル | 統合候補アンカー | 4分類判定 (Stage 2) | 新・複合検証ゲート (Gate 1〜4) | ユーザー決裁 | 判定日 |
+| :--- | :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| <!-- 例: CLAIM-20261018-myproj-PAT-CODE-001 --> | <!-- PAT-CODE-001 --> | <!-- ALL --> | <!-- rules/AGENTS.md (§4.1) --> | <!-- SUBSUMPTION --> | <!-- ALL PASS --> | <!-- [ ] 承認 / [ ] 保留 / [ ] 棄却 --> | - |
+
+---
+
+## 3. 原票詳細および 3段階意味的整合性監査プレビュー
 
 <!--
-### [PROP-001]: [タイトル]
-- **参照WikiパターンID**: PAT-CAT-xxx (./wiki/patterns/universal/PAT-CAT-xxx.md)
-- **関連エージェント/スキル**: [conductor / architect / backend-engineer / ui-designer / qa-engineer]
-- **改訂動機・背景**:
-  - [なぜこのルール・スキルの修正が必要か]
-- **変更内容概要**:
-  - [変更対象ファイルおよび変更点]
-- **PURPOSE.md 記録内容**:
-  - [skills/{skill}/PURPOSE.md へ記載した内容]
-- **出力パッチ**:
-  - `./promotions/{target}.patch`
-- **複合検証ゲート (Gating) 結果**:
-  - 静的解析: PASS / ドキュメント整合性: PASS / シナリオテスト: PASS / トークン効率: PASS
+### [CLAIM-{YYYYMMDD}-{PROJECT_SLUG}-{PAT_ID}]: [知見タイトル]
+- **控えファイルパス**: `./promotions/CLAIM-{YYYYMMDD}-{PROJECT_SLUG}-{PAT_ID}.md`
+- **Hub 投函先パス**: `~/.gemini/knowledge-hub/inbox/CLAIM-{YYYYMMDD}-{PROJECT_SLUG}-{PAT_ID}.md`
+- **発生コンテキスト・根本原因 (RCA)**:
+  - [なぜこの問題が発生し、なぜ汎用ルール化が必要か]
+- **抽象化された処方箋・推奨ルール（純粋な State 文面）**:
+  - [固有名詞・履歴IDを含まない統合用ルール文]
+- **3段階意味的整合性監査（新・複合検証ゲート）結果**:
+  - **New Gate 1 (Core Invariants 監査)**: PASS（INV-01〜INV-10 違反なし）
+  - **New Gate 2 (相互矛盾4分類監査)**: `SUBSUMPTION`（既存ルール補強） / `SCOPED_BRANCH`（条件分岐） / `EQUIVALENT`（重複） / `TRUE_CONTRADICTION`（要人間裁定）
+  - **New Gate 3 (過剰適合排除 & アンカー実在)**: PASS（固有名詞混入 0 件、統合先アンカー実在確認済み）
+  - **New Gate 4 (コンテキスト純度 & 絶対行数バジェット)**: PASS（履歴ID混入 0 件、上限行数以内）
 -->

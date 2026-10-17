@@ -1,0 +1,24 @@
+{
+  "pipeline_name": "system-dev-pipeline",
+  "version": "2.3.0",
+  "released_at": "2026-10-18T09:00:00+09:00",
+  "invariants_version": "1.0.0",
+  "absorbed_patterns": [
+    {
+      "pattern_id": "PAT-SYS-001",
+      "claim_ids": [
+        "CLAIM-20261017-legacy-PAT-SYS-001",
+        "CLAIM-20261017-bicycle-log-PAT-SYS-001"
+      ],
+      "absorbed_in_version": "2.3.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/CORE_INVARIANTS.md",
+        "rules/AGENTS.md",
+        "agents/conductor.md",
+        "skills/dev-phase7-release/SKILL.md"
+      ],
+      "summary": "外部CLIの非対話実行強制(--quiet等)、標準エラー出力破棄(2>/dev/null)禁止、およびバックグラウンド待機時のscheduleタイマー保護"
+    }
+  ]
+}

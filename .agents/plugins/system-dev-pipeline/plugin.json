@@ -1,7 +1,7 @@
 {
   "name": "system-dev-pipeline",
-  "version": "2.2.0",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V2.2（2層プロファイル体系、グランドデザイン規格準拠、Shift-Left静的スケルトン、Alembic・MSW・250行制限厳格運用）",
+  "version": "2.3.0",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V2.3（2層プロファイル体系、Shift-Left静的スケルトン、Central Knowledge Hub、3段階意味的整合性監査、Immutable Core + Local Overlay）",
   "author": "Antigravity Workflow Automation",
   "agents": [
     "conductor",

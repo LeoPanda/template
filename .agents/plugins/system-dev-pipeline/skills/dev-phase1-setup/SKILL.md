@@ -1,158 +1,76 @@
 ---
 name: dev-phase1-setup
-description: "新規システム開発プロジェクトの環境初期化を行うスキル。静的スケルトン基盤展開、ディレクトリ構造、Wiki層受皿、メトリクス受皿、.env、PROJECT_STATE.md (2層プロファイル・MOCK_MODE記録)、TEMPLATE_PROMOTIONS.md、.code-workspace、docs配下の各種ドキュメント雛形を自動生成・配置する。"
+description: "新規システム開発プロジェクトの環境初期化を行うスキル。Central Knowledge Hub未処理原票検知、静的スケルトン基盤展開、ディレクトリ構造、Wiki層・メトリクス受皿、.env、PROJECT_STATE.md、TEMPLATE_PROMOTIONS.md、docs配下の各種ドキュメント雛形を自動生成・配置する。"
 ---
 
-# PHASE 1: プロジェクト初期化指示 V2.2
+# PHASE 1: プロジェクト初期化指示 V2.3
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`)
-- **副担当**: なし (メインエージェント直接実行)
+- **連携エージェント**: 🛡️ `qa-engineer`（Knowledge Hub 未処理原票の監査時）
 
 新規アプリケーション開発プロジェクトの環境初期化を以下の手順に従って自動実行してください。
 
 ---
 
-## 1. ディレクトリ構造および受皿の自動生成
-
-プロジェクトルートに以下のディレクトリ群を作成してください。
-
-### (1) ドキュメント・計画・ルール領域
-- `./docs/`
-- `./docs/plans/`
-- `./docs/plans/scenario-test/`
-- `./docs/plans/metrics/`
-- `./rules/`
-
-### (2) WikiLayer 受皿領域（ナレッジ蓄積層）
-- `./wiki/patterns/local/` (Tier 1: プロジェクト固有仕様)
-- `./wiki/patterns/universal/` (Tier 2: 全体共通知見)
-- `./wiki/patterns/rejected/` (検証不合格知見)
-- `./wiki/archive/` (陳腐化パターンのアーカイブ)
-
-### (3) 定量メトリクス領域
-- `./metrics/turns/` (ターン別一次データ)
-- `./metrics/phases/` (フェーズ別集計データ)
+## 1. テンプレート・スケルトン参照パスの解決と動作モード判定
+以下の優先順位でプラグイン資産を探索し、`EXECUTION_MODE` を決定します：
+1. **ローカル探索**: `./.agents/plugins/system-dev-pipeline/` が存在する場合 ➔ `EXECUTION_MODE=LOCAL_STANDALONE`（`PLUGIN_DIR=./.agents/plugins/system-dev-pipeline`）。
+2. **グローバル探索**: `~/.gemini/config/plugins/system-dev-pipeline/` が存在する場合 ➔ `EXECUTION_MODE=GLOBAL_PLUGIN`（`PLUGIN_DIR=~/.gemini/config/plugins/system-dev-pipeline`）。
+3. いずれも存在しない場合は環境エラーとして処理を停止し、プラグイン配置をユーザーに促します。
 
 ---
 
-## 2. `.gitignore` の自動設定・追記
-
-プロジェクトルートの `.gitignore` を確認し、知見収集・メトリクス領域およびセキュア除外設定が存在しない場合は追記してください：
-```gitignore
-# Knowledge & Metrics
-wiki/
-metrics/
-
-# Environment & Secrets
-.env
-*.pem
-*.key
-*.db
-```
+## 2. Central Knowledge Hub の初期化と未処理原票の起動時検知 (V2.3)
+1. `bash "${PLUGIN_DIR}/scripts/pipeline-reconciler.sh" --init-hub` および `--status` を実行し、`~/.gemini/knowledge-hub/` の状態を診断します。
+2. `inbox/` または `pending_approval/` に未反映・裁定待ちの知見原票（`CLAIM-*.md` / `REVIEW-*.md`）が存在する場合：
+   - ユーザーへ未処理原票の存在をアラートし、必要に応じて 🛡️ `qa-engineer` による3段階意味的監査を実行した上で、**`ask_question` モーダル**で即時承認・裁定を行います。
+   - 承認された原票は `pipeline-reconciler.sh --activate-claim <CLAIM>` により `overlay/LOCAL_FEEDBACK_RULES.md` へクリーン再生成反映し、本プロジェクトの PHASE 2 以降から即座に有効化します。
 
 ---
 
-## 3. テンプレートおよびスケルトン参照パスの動的フォールバック解決
+## 3. ディレクトリ構造および `.gitignore` の自動設定
+1. **ディレクトリ作成**:
+   - ドキュメント・計画・ルール: `./docs/`, `./docs/plans/`, `./docs/plans/scenario-test/`, `./docs/plans/metrics/`, `./rules/`
+   - Spoke Wiki 受皿: `./wiki/patterns/local/`, `./wiki/patterns/universal/`, `./wiki/patterns/rejected/`, `./wiki/archive/`
+   - メトリクス・原票控え: `./metrics/turns/`, `./metrics/phases/`, `./promotions/`
+2. **`.gitignore` の確認・追記**:
+   ```gitignore
+   # Knowledge, Promotions & Metrics
+   wiki/
+   metrics/
+   promotions/
 
-テンプレートおよび静的スケルトンの配置形態を以下の優先順位で動的に探索・解決します：
-1. **ローカル探索（プロジェクトローカルプラグイン）**:
-   - `./.agents/plugins/system-dev-pipeline/` が存在するか確認。
-   - 存在する場合: `EXECUTION_MODE` を `LOCAL_STANDALONE` と判定。
-   - `TEMPLATE_DIR`: `./.agents/plugins/system-dev-pipeline/templates/`
-   - `SKELETON_DIR`: `./.agents/plugins/system-dev-pipeline/skeletons/`
-2. **グローバル探索（環境共有プラグイン）**:
-   - 上記が存在しない場合、`~/.gemini/config/plugins/system-dev-pipeline/` を探索。
-   - 存在する場合: `EXECUTION_MODE` を `GLOBAL_PLUGIN` と判定。
-   - `TEMPLATE_DIR`: `~/.gemini/config/plugins/system-dev-pipeline/templates/`
-   - `SKELETON_DIR`: `~/.gemini/config/plugins/system-dev-pipeline/skeletons/`
-3. **未検出時**:
-   - いずれのパスにもプラグイン資産が存在しない場合は、環境エラーとして処理を停止し、プラグインの配置（ローカルまたはグローバル）をユーザーに促してください。
-
----
-
-## 4. 静的スケルトン層（`skeletons/`）の自動展開 (Shift-Left)
-
-事故が起きやすい基盤コード（Alembic, entrypoint.sh, CI, session, auth, MSWモック, UI共通部品）を、プロジェクトルートへ初期展開します：
-1. `SKELETON_DIR/common/` の内容（`.github/workflows/ci.yml`, `.editorconfig`）をプロジェクトへコピー。
-2. 選定プロファイルに応じたスケルトン基盤の展開（未存在時）:
-   - **Profile A (最優先ゴールデンパス)**: `SKELETON_DIR/profile-a/` の内容（`docker/`, `backend/`, `frontend/`）をコピー。実行権限の付与: `chmod +x docker/entrypoint.sh`。
-   - **Profile D (PCローカルデスクトップアプリ型)**: `SKELETON_DIR/profile-d/` の内容（`src-tauri/`, `docker/`, `backend/`, `frontend/`）をコピー。
+   # Environment & Secrets
+   .env
+   *.pem
+   *.key
+   *.db
+   ```
 
 ---
 
-## 5. 環境変数設定（.env）の配置
-
-`TEMPLATE_DIR/.env.template` を読み込み、プロジェクトルートに `.env` を作成・保存してください。
-モック制御環境変数 `VITE_ENABLE_MOCK=true` が初期設定されていることを確認してください。
-
----
-
-## 6. プロジェクト状態管理および台帳の初期化
-
-### (1) `PROJECT_STATE.md` の展開
-`TEMPLATE_DIR/PROJECT_STATE.md.template` を読み込み、プロジェクトルート直下に `./PROJECT_STATE.md` を展開します。
-- `{{PROJECT_NAME}}`: プロジェクトディレクトリ名
-- `{{APP_VERSION}}`: `1.0.0`
-- `{{UPDATED_AT}}`: 現在日時 (JST)
-- `{{EXECUTION_MODE}}`: 判定された `LOCAL_STANDALONE` または `GLOBAL_PLUGIN`
-- `{{TEMPLATE_SOURCE}}`: 解決されたテンプレート元パス
-
-### (2) `TEMPLATE_PROMOTIONS.md` の展開
-`TEMPLATE_DIR/TEMPLATE_PROMOTIONS.md.template` を読み込み、プロジェクトルート直下に `./TEMPLATE_PROMOTIONS.md` を作成・保存します。
-
-### (3) Wiki 台帳の初期化
-以下の初期台帳ファイルを `./wiki/` 配下に作成・配置します（未存在時）：
-- `./wiki/logs.md`:
-  ```markdown
-  # Wiki Pattern & Revision Logs
-
-  | 日時 | パターンID | 分類 | 契機 | 概要 | 状態 |
-  | :--- | :--- | :--- | :--- | :--- | :--- |
-  ```
-- `./wiki/skill-impact.md`:
-  ```markdown
-  # Skill & Knowledge Impact Map
-
-  | パターンID | 影響スキル / ファイル | 改善種別 | 効果測定 / メトリクス寄与 |
-  | :--- | :--- | :--- | :--- |
-  ```
+## 4. 静的スケルトン層（`skeletons/`）と `.env` の自動展開 (Shift-Left)
+1. `PLUGIN_DIR/skeletons/common/`（`.github/workflows/ci.yml`, `.editorconfig`）をプロジェクトルートへコピーします。
+2. 選定プロファイルに応じたスケルトン基盤を展開します（未存在時）：
+   - **Profile A (ゴールデンパス)**: `skeletons/profile-a/`（`docker/`, `backend/`, `frontend/`）をコピーし、`chmod +x docker/entrypoint.sh` を付与。
+   - **Profile D (ローカルデスクトップ型)**: `skeletons/profile-d/`（`src-tauri/`, `docker/`, `backend/`, `frontend/`）をコピー。
+3. `PLUGIN_DIR/templates/.env.template`（またはスケルトン同梱 `.env.example`）から `.env` を生成し、`VITE_ENABLE_MOCK=true` が初期設定されていることを確認します。
 
 ---
 
-## 7. IDE 設定（<プロジェクトフォルダ名>.code-workspace）の配置
-
-`TEMPLATE_DIR/code-workspace.template` を読み込み、プロジェクトルートに `<プロジェクトフォルダ名>.code-workspace` を作成・保存してください。
-
----
-
-## 8. ドキュメント雛形のコピーと初期化
-
-`TEMPLATE_DIR` から以下のファイルを `docs/` ディレクトリにコピーしてください。
-- `AI駆動システム開発手順書V2.2.md`
-- `AI駆動システム開発フェーズ定義書V2.2.md`
-- `要件定義書.md`
-- `APIキー安全管理・一元化設計書.md`
-- `AI駆動ロギングシステム仕様書.md`
-
-`TEMPLATE_DIR/グランドデザイン/` が存在する場合は、`docs/グランドデザイン/` へコピーしてください。
-
-また、開発ルールファイルを `TEMPLATE_DIR/../rules/`（またはグローバル）から `./rules/` へコピーしてください：
-- `rules/AGENTS.md`
-- `rules/システム改訂ルール.md` (テンプレートからコピー)
+## 5. 状態管理・台帳・ドキュメント雛形の配置
+1. **`PROJECT_STATE.md` の展開**:
+   - `PLUGIN_DIR/templates/PROJECT_STATE.md.template` から `./PROJECT_STATE.md` を生成し、`{{PROJECT_NAME}}`, `{{APP_VERSION}}` (`1.0.0`), `{{UPDATED_AT}}`, `{{EXECUTION_MODE}}`, `{{TEMPLATE_SOURCE}}` を埋め込みます。
+2. **`TEMPLATE_PROMOTIONS.md` および Wiki 台帳の初期化**:
+   - `PLUGIN_DIR/templates/TEMPLATE_PROMOTIONS.md.template` を `./TEMPLATE_PROMOTIONS.md` へ配置します。
+   - `./wiki/logs.md`（時系列ログ表）および `./wiki/skill-impact.md`（影響マップ表）を初期化します。
+3. **IDE 設定およびドキュメント雛形のコピー**:
+   - `PLUGIN_DIR/templates/code-workspace.template` から `<プロジェクト名>.code-workspace` を生成します。
+   - `PLUGIN_DIR/templates/` から `AI駆動システム開発手順書V2.2.md`（または最新版）、`AI駆動システム開発フェーズ定義書V2.2.md`（または最新版）、`要件定義書.md`、`APIキー安全管理・一元化設計書.md`、`AI駆動ロギングシステム仕様書.md`、および `グランドデザイン/` 一式を `./docs/` へコピーします。
+   - `PLUGIN_DIR/rules/AGENTS.md` および `PLUGIN_DIR/templates/システム改訂ルール.md` を `./rules/` へコピーします。
 
 ---
 
-## 9. Antigravity IDE/CLI 設定の案内
-
-Antigravityのセキュリティ管理画面（`Settings → Projects → <本プロジェクト名>`）にて、以下の推奨設定を手動設定いただく旨を案内してください：
-- `fileAccessPolicy`: `AGENT_SETTING_POLICY_ASK`
-- `sandboxMode`: `true`
-- `autoExecutionPolicy`: `CASCADE_COMMANDS_AUTO_EXECUTION_EAGER`
-- `artifactReviewMode`: `ARTIFACT_REVIEW_MODE_ALWAYS`
-
----
-
-## 10. 状態更新と完了報告
-
-1. `PROJECT_STATE.md` の PHASE 1 を完了に更新し、ステータスを `PHASE_2_REQUIREMENTS` へ進めてください。
-2. 作成・展開したスケルトン、ファイル一覧および動作モード（`EXECUTION_MODE`）を表示し、PHASE 2（要件定義）に進む準備が完了したことをユーザーに報告してください。
+## 6. Antigravity 推奨設定案内と完了報告
+1. Antigravity 設定（`fileAccessPolicy: AGENT_SETTING_POLICY_ASK`, `sandboxMode: true`, `autoExecutionPolicy: CASCADE_COMMANDS_AUTO_EXECUTION_EAGER`, `artifactReviewMode: ARTIFACT_REVIEW_MODE_ALWAYS`）を案内します。
+2. `PROJECT_STATE.md` の PHASE 1 を完了に更新してステータスを `PHASE_2_REQUIREMENTS` へ進め、展開したファイル一覧・動作モード・Knowledge Hub 同期状態をユーザーへ報告してください。

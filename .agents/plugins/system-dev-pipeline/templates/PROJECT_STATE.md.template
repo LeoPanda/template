@@ -9,6 +9,7 @@
 - **現行バージョン**: v{{APP_VERSION}}
 - **EXECUTION_MODE**: {{EXECUTION_MODE}} <!-- [GLOBAL_PLUGIN / LOCAL_STANDALONE] -->
 - **TEMPLATE_SOURCE**: {{TEMPLATE_SOURCE}}
+- **Knowledge Hub 連携状態**: SYNCED (Immutable Core v2.3.0 + Local Overlay)
 - **現在の作業ブランチ**: main
 - **最終更新日時**: {{UPDATED_AT}}
 - **最終更新者**: 👑 プロジェクトコンダクター (Single Writer)
@@ -19,12 +20,13 @@
 
 - [ ] **PHASE 1: プロジェクトの準備**
   - [x] ディレクトリ・環境設定展開 (`dev-phase1-setup`)
+  - [x] Central Knowledge Hub (`~/.gemini/knowledge-hub/`) 初期化 & 未処理原票確認 (`pipeline-reconciler.sh --status`)
   - [x] 静的スケルトン基盤展開 (`skeletons/common/`, `skeletons/profile-a/`)
   - [x] 環境変数初期化 (`.env` に `VITE_ENABLE_MOCK=true` 等を設定)
-  - [x] 永続ナレッジ領域初期化 (`wiki/patterns/{local,universal,rejected}`, `wiki/archive/`)
-  - [x] 知見・メトリクス領域初期化 (`wiki/`, `metrics/`、`.gitignore` 自動登録)
-  - [x] 知見昇格バッファ初期配置 (`TEMPLATE_PROMOTIONS.md`)
-  - [x] `PROJECT_STATE.md` 初期化 (2層プロファイル・MOCK_MODE記録)
+  - [x] 永続ナレッジ領域初期化 (`wiki/patterns/{local,universal,rejected}`, `wiki/archive/`, `promotions/`)
+  - [x] 知見・メトリクス領域初期化 (`wiki/`, `metrics/`, `promotions/` の `.gitignore` 自動登録)
+  - [x] 知見昇格提示サマリ初期配置 (`TEMPLATE_PROMOTIONS.md`)
+  - [x] `PROJECT_STATE.md` 初期化 (2層プロファイル・MOCK_MODE・Knowledge Hub 状態記録)
 - [ ] **PHASE 2: 要件定義**
   - [ ] 📐 `architect`: `docs/要件定義書.md` 作成・精査（2層プロファイル体系選定・チェックリスト適用）
   - [ ] 👤 ユーザー: Open Questions 回答
@@ -74,16 +76,16 @@
     - [ ] IAP JWT 署名検証ミドルウェア有効化検証
     - [ ] `entrypoint.sh` による起動時 Alembic マイグレーション実行保証
     - [ ] Litestream レプリケーション設定および監視エンドポイント検証
-  - [ ] 👑 コンダクター: 本番環境（Cloud Run等）初回デプロイ実行
+  - [ ] 👑 コンダクター: 本番環境（Cloud Run等）初回デプロイ実行（`--quiet` 非対話フラグ＋タイムアウト監視）
   - [ ] 🛡️ `qa-engineer`: IAM / IAP セキュリティ設定監査
   - [ ] **【承認ゲート】👤 ユーザー: 本番稼働確認の明示的承認** (承認日: )
-- [ ] **PHASE 8: ドキュメント改訂管理・自己進化の開始**
+- [ ] **PHASE 8: ドキュメント改訂管理・Central Knowledge Hub 自己進化の開始**
   - [ ] 👑 コンダクター: 定量メトリクス集計 (`dev-metrics-collector`)
-  - [ ] 👑 コンダクター: `wiki-proposer` によるスキル改修案立案 & `PURPOSE.md` 生成
-  - [ ] 🛡️ `qa-engineer`: 複合検証ゲート実行 (判定: Adopted / Rejected)
-  - [ ] 👑 コンダクター: `wiki-compactor` によるWiki整理・枝刈り
-  - [ ] **【承認ゲート】👤 ユーザー: 知見昇格レビューの明示的承認 (./TEMPLATE_PROMOTIONS.md)** (承認日: )
-  - [ ] 👑 コンダクター: EXECUTION_MODE に応じた知見昇格実行 (パッチ出力 or プラグイン直接反映)
+  - [ ] 👑 コンダクター: `wiki-compactor` によるWiki整理・原票クラスタリング
+  - [ ] 👑 コンダクター: `wiki-proposer` による標準化知見原票（`CLAIM-*.md`）生成 & `~/.gemini/knowledge-hub/inbox/` 投函
+  - [ ] 🛡️ `qa-engineer`: 3段階意味的整合性監査（新・複合検証ゲート Gate 1〜4）実行
+  - [ ] **【承認ゲート】👤 ユーザー: `ask_question` モーダルによる知見昇格・裁定承認 (`./TEMPLATE_PROMOTIONS.md`)** (承認日: )
+  - [ ] 👑 コンダクター: `pipeline-reconciler.sh` による `overlay/LOCAL_FEEDBACK_RULES.md` クリーン再生成（または Core 統合）
   - [ ] ⚙️ `dev-git-release`: `feature` を `main` へ Squash Merge (`Release v1.0.0`)、Push、次期 `feature` 切り直し
   - [ ] ⚙️ `dev-phase8-rules`: 改訂運用ルールファイル群の配置
   - [ ] 👑 コンダクター: ステータスを `PRODUCTION_ACTIVE` へ移行
@@ -105,15 +107,15 @@
 
 ---
 
-## 3. WikiSkill & ナレッジ自己進化ステータス
+## 3. WikiSkill & Central Knowledge Hub 自己進化ステータス (V2.3)
 
-- **Wiki登録パターン数**:
-  - Tier 1 (プロジェクト固有): 0 件 (`wiki/patterns/local/`)
-  - Tier 2 (テンプレート共通): 0 件 (`wiki/patterns/universal/`)
-- **直近の自己進化サイクル**:
-  - 実行日: -
-  - 対象スキル: -
-  - 判定結果: -
+- **Spoke Wiki 登録パターン数**:
+  - Tier 1 (プロジェクト固有・`docs/`逆同期対象): 0 件 (`wiki/patterns/local/`)
+  - Tier 2 (テンプレート共通・Hub投函対象): 0 件 (`wiki/patterns/universal/`)
+- **Central Knowledge Hub (`~/.gemini/knowledge-hub/`) 連携状態**:
+  - 投函済み知見原票 (`CLAIM-*.md`): 0 件 (`./promotions/` & `inbox/`)
+  - 3段階意味的監査結果 (New Gate 1〜4): -
+  - Local Overlay (`LOCAL_FEEDBACK_RULES.md`) 反映状態: -
   - 理由/エビデンス: `wiki/logs.md` 参照
 
 ---
