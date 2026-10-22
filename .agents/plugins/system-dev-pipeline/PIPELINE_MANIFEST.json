@@ -1,7 +1,7 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.3.0",
-  "released_at": "2026-10-18T09:00:00+09:00",
+  "version": "2.4.0",
+  "released_at": "2026-10-22T19:00:00+09:00",
   "invariants_version": "1.0.0",
   "absorbed_patterns": [
     {
@@ -19,6 +19,102 @@
         "skills/dev-phase7-release/SKILL.md"
       ],
       "summary": "外部CLIの非対話実行強制(--quiet等)、標準エラー出力破棄(2>/dev/null)禁止、およびバックグラウンド待機時のscheduleタイマー保護"
+    },
+    {
+      "pattern_id": "PAT-DOC-001",
+      "claim_ids": [
+        "CLAIM-20261018-system-dev-dashboard-PAT-DOC-001"
+      ],
+      "absorbed_in_version": "2.3.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/dev-phase1-setup/SKILL.md",
+        "rules/AGENTS.md"
+      ],
+      "summary": "初期セットアップ時におけるdocs直下への静的設計文書雛形コピー廃止とフォルダ配置への純化"
+    },
+    {
+      "pattern_id": "PAT-002",
+      "claim_ids": [
+        "CLAIM-20261018-obsidian-PAT-002"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/wiki-maintainer/SKILL.md",
+        "skills/wiki-proposer/SKILL.md"
+      ],
+      "summary": "決定論的修正(Hard Gate)とセマンティック文脈判断(Soft Engine)の2系統物理分離"
+    },
+    {
+      "pattern_id": "PAT-MOCK-001",
+      "claim_ids": [
+        "CLAIM-20261020-system-dev-dashboard-PAT-MOCK-001"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase5-walkthrough/SKILL.md",
+        "skills/dev-review-system/SKILL.md"
+      ],
+      "summary": "実結合モードにおけるサイレントモックフォールバックの禁止（Fail-Fast原則）"
+    },
+    {
+      "pattern_id": "PAT-UI-001",
+      "claim_ids": [
+        "CLAIM-20261020-system-dev-dashboard-PAT-UI-001"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "templates/画面仕様書.md",
+        "agents/ui-designer.md",
+        "skills/dev-review-code/SKILL.md"
+      ],
+      "summary": "デイライトモード視認性担保とセマンティックデザイントークン体系および明暗ペア指定必須化"
+    },
+    {
+      "pattern_id": "PAT-REV-001",
+      "claim_ids": [
+        "CLAIM-20261022-021248"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SCOPED_BRANCH",
+      "target_files": [
+        "templates/システム改訂ルール.md",
+        "agents/conductor.md"
+      ],
+      "summary": "PROJECT_STATE.md のシステム改訂ルール改定履歴表適用除外明文化"
+    },
+    {
+      "pattern_id": "PAT-CODE-001",
+      "claim_ids": [
+        "CLAIM-20261022-system-dev-dashboard-PAT-CODE-001"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "agents/backend-engineer.md",
+        "skills/dev-review-code/SKILL.md"
+      ],
+      "summary": "バックエンドにおけるDTO・パーサー分離とAnti-God Module (400行制限) 遵守"
+    },
+    {
+      "pattern_id": "PAT-TEST-001",
+      "claim_ids": [
+        "CLAIM-20261022-system-dev-dashboard-PAT-TEST-001"
+      ],
+      "absorbed_in_version": "2.4.0",
+      "integration_type": "SCOPED_BRANCH",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase6-testing/SKILL.md"
+      ],
+      "summary": "Profile D (Tauri/SQLite WAL) における結合テスト時の一時実ファイルDB動的プロビジョニングとアトミック破棄"
     }
   ]
 }

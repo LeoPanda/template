@@ -3,7 +3,7 @@ name: dev-review-system
 description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼働耐性、セキュリティ、平文シークレット排除、本番モック排除二重防御、Alembic起動保証、ロールバック計画の完全性を総合監査するスキル。"
 ---
 
-# システム総合レビュー (System Comprehensive Review) スキル V2.2
+# システム総合レビュー (System Comprehensive Review) スキル V2.4
 
 - **主担当エージェント**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **委譲元 / 統括**: 👑 プロジェクトコンダクター (`conductor`)
@@ -27,9 +27,10 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ### 必須検証チェックリスト（1件でも違反があれば即座に `RELEASE BLOCKED`）
 1. **平文シークレット完全排除 (Zero Secrets in Plaintext)**:
    - ソースコード、Dockerfile、`本番適用作業手順書.md` 内にAPIキー、パスワード、秘密鍵が平文で直接記載されていないか。
-2. **本番モック無効化の二重防御 (Mock-Free Production Guarantee)**:
+2. **本番モック無効化の二重防御 (Mock-Free Production Guarantee & Fail-Fast 監査 / V2.4)**:
    - 本番ビルド環境変数において `VITE_ENABLE_MOCK=false` が確実に注入されているか。
    - 本番JSバンドルから MSW (`browser.ts`, `handlers.ts`) がツリーシェイキング等で排除または不活性化され、本番実行時にモック通信が一切走らない二重防御策が講じられているか。
+   - **サイレントモックフォールバック厳格禁止 (Fail-Fast原則)**: 通信エラーやIPC障害発生時にモックデータへサイレントフォールバックする記述がクライアント・サービスコード内に存在しないことを検証。エラー時は例外を即座にUI/ログへ伝播させること。
 3. **コンテナセキュリティと非特権実行**:
    - rootユーザーによるコンテナ実行を禁止し、非特権ユーザー（`appuser` 等）で実行されているか。
    - 不要なポートが外部開放されていないか。

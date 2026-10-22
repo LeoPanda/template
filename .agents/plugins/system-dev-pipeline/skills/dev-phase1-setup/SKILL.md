@@ -64,9 +64,10 @@ description: "新規システム開発プロジェクトの環境初期化を行
 2. **`TEMPLATE_PROMOTIONS.md` および Wiki 台帳の初期化**:
    - `PLUGIN_DIR/templates/TEMPLATE_PROMOTIONS.md.template` を `./TEMPLATE_PROMOTIONS.md` へ配置します。
    - `./wiki/logs.md`（時系列ログ表）および `./wiki/skill-impact.md`（影響マップ表）を初期化します。
-3. **IDE 設定およびドキュメント雛形のコピー**:
+3. **IDE 設定およびドキュメントディレクトリ構造の初期化**:
    - `PLUGIN_DIR/templates/code-workspace.template` から `<プロジェクト名>.code-workspace` を生成します。
-   - `PLUGIN_DIR/templates/` から `AI駆動システム開発手順書V2.2.md`（または最新版）、`AI駆動システム開発フェーズ定義書V2.2.md`（または最新版）、`要件定義書.md`、`APIキー安全管理・一元化設計書.md`、`AI駆動ロギングシステム仕様書.md`、および `グランドデザイン/` 一式を `./docs/` へコピーします。
+   - `docs/` 配下にディレクトリ構造（`./docs/設計書/Current/`, `./docs/検討課題/`, `./docs/plans/` 等）を作成します（※ `docs/` 直下への静的な設計文書雛形コピーは廃止。各種設計文書は PHASE 2 以降で設計プロファイルが選定された後に、`docs/設計書/Current/` 配下へ動的かつプロファイル適合性を担保して直接策定・配置します）。
+   - 必要に応じて `PLUGIN_DIR/templates/グランドデザイン/` 等の参照用ガイドラインのみを配置します。
    - `PLUGIN_DIR/rules/AGENTS.md` および `PLUGIN_DIR/templates/システム改訂ルール.md` を `./rules/` へコピーします。
 
 ---

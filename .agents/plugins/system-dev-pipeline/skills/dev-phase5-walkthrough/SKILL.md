@@ -3,7 +3,7 @@ name: dev-phase5-walkthrough
 description: "PHASE 5 ウォークスルー検証、モック透過切替検証 (VITE_ENABLE_MOCK=true/false)、コードを正としたAPI仕様書同期、およびPHASE 5.5 コード品質レビュー (dev-review-code) ゲートへ接続するスキル。"
 ---
 
-# PHASE 5: ウォークスルー検証・モック切替検証とドキュメント同期 V2.2
+# PHASE 5: ウォークスルー検証・モック切替検証とドキュメント同期 V2.4
 
 - **対話・修正・モック切替統括**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **API仕様書同期**: 📐 設計・立案スペシャリスト (`architect`) (Model: `pro`)
@@ -26,13 +26,14 @@ description: "PHASE 5 ウォークスルー検証、モック透過切替検証 
 - **修正後のコンテナ再構成徹底ルール**:
   コード修正後は必ず `docker compose down` および `docker compose up --build -d` を実行して反映してください。
 
-### 2. モック透過切替検証 (Mock Interception Verification)
+### 2. モック透過切替検証 (Mock Interception Verification & Fail-Fast 監査)
 開発用モックと実API結合の整合性を担保するため、以下の透過切替検証をコンダクター統括のもと実施します：
 1. **モックモード動作確認 (`VITE_ENABLE_MOCK=true`)**:
    - MSW (Mock Service Worker) による擬似レスポンスが正常に返却され、UIが破綻なく描画されることを確認。
 2. **実API結合モード動作確認 (`VITE_ENABLE_MOCK=false`)**:
    - `.env` で `VITE_ENABLE_MOCK=false` に変更後、コンテナを再起動（またはフロントエンドHMR反映）。
    - 実FastAPIバックエンドおよび SQLite データベースと直接疎通し、実データによる登録・取得・更新が正常動作することを確認。
+   - **サイレントモックフォールバック厳格禁止 (Fail-Fast原則 / V2.4)**: 実結合モードにおいて、通信エラー、API未検出、IPC例外が発生した際に絶対にモックデータへフォールバックしてはならず、例外を即座にスローしてUIやログに明確にエラーが顕在化することを確認。
 3. **モード間整合性確認**:
    - モックと実API間でリクエスト/レスポンススキーマの乖離やタイポがないことを検証。
 

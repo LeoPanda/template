@@ -1,6 +1,11 @@
 # Environment & Credentials
 .env
 
+# Editor & OS
+.vscode/
+.DS_Store
+
 # Knowledge & Metrics
 wiki/
 metrics/
+promotions/

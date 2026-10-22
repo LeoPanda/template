@@ -274,7 +274,10 @@ for target_dir in (active_dir, inbox_dir):
 
         if cid in absorbed_claim_ids or (pid and pid in absorbed_pat_ids):
             dest = archive_dir / cp.name
-            shutil.move(str(cp), str(dest))
+            updated_text = re.sub(r'^status:\s*".*"$', 'status: "UPSTREAMED"', text, flags=re.MULTILINE)
+            dest.write_text(updated_text, encoding="utf-8")
+            if cp.resolve() != dest.resolve():
+                cp.unlink()
             retired_count += 1
             state.setdefault("upstreamed_history", []).append({
                 "claim_id": cid,

@@ -9,7 +9,7 @@
 - **現行バージョン**: v{{APP_VERSION}}
 - **EXECUTION_MODE**: {{EXECUTION_MODE}} <!-- [GLOBAL_PLUGIN / LOCAL_STANDALONE] -->
 - **TEMPLATE_SOURCE**: {{TEMPLATE_SOURCE}}
-- **Knowledge Hub 連携状態**: SYNCED (Immutable Core v2.3.0 + Local Overlay)
+- **Knowledge Hub 連携状態**: SYNCED (Immutable Core v2.4.0 + Local Overlay)
 - **現在の作業ブランチ**: main
 - **最終更新日時**: {{UPDATED_AT}}
 - **最終更新者**: 👑 プロジェクトコンダクター (Single Writer)

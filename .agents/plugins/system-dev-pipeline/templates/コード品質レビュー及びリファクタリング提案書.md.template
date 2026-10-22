@@ -1,4 +1,4 @@
-# コード品質レビュー及びリファクタリング提案書 (V2.2)
+# コード品質レビュー及びリファクタリング提案書 (V2.4)
 
 - **レビュー実施日**: {{REVIEW_DATE}}
 - **実施ロール**: 🧹 コード品質・リファクタリング監査役 (qa-engineer)
@@ -6,8 +6,10 @@
 - **総合判定**: {{OVERALL_STATUS}} <!-- [CLEAN / REFACTOR RECOMMENDED / BLOCKED] -->
 
 ## 1. 静的解析・健全性メトリクス
-- 最大コンポーネント行数: {{MAX_COMPONENT_LINES}} 行 (`{{MAX_COMPONENT_PATH}}`) [許容: 250行以内]
+- 最大フロントエンドコンポーネント行数: {{MAX_COMPONENT_LINES}} 行 (`{{MAX_COMPONENT_PATH}}`) [許容: 250行以内]
+- 最大バックエンドモジュール行数: {{MAX_BACKEND_MODULE_LINES}} 行 (`{{MAX_BACKEND_MODULE_PATH}}`) [許容: 400行以内 / DTO・パーサー物理分離]
 - コンポーネント内直書きモック残存数: {{INLINE_MOCK_COUNT}} 件 [許容: 0件]
+- UIデイライト視認性違反（ダーク前提淡色単独直書き）: {{DAYLIGHT_CONTRAST_VIOLATIONS}} 件 [許容: 0件 / 明暗ペア指定必須]
 - 手動型定義残存数: {{MANUAL_TYPE_COUNT}} 件 [許容: 0件]
 - デッドコード・一時的デバッグログ残存数: {{DEAD_CODE_COUNT}} 件 [許容: 0件]
 - 重複コードブロック検出数: {{DUPLICATE_CODE_COUNT}} 件

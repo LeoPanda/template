@@ -35,10 +35,12 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    git commit -m "chore: save work before release"
    ```
 
-### 2. バージョン番号の取得
-1. `.env`（または `.env.production`）ファイルからバージョン番号を抽出してください。
+### 2. バージョン番号の取得とサニタイズ (V2.4 二重プレフィックス防止ガード)
+1. `.env`（または `.env.production`）ファイルからバージョン番号を抽出し、先頭の `v` または `V` を除去してサニタイズしてください。
    ```bash
-   VERSION=$(grep -E '^(APP_)?VERSION=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+   RAW_VERSION=$(grep -E '^(APP_)?VERSION=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+   CLEAN_VERSION=$(echo "$RAW_VERSION" | sed -E 's/^[vV]+//')
+   VERSION="${CLEAN_VERSION:-1.0.0}"
    ```
 2. バージョン番号が取得できない場合は、デフォルトとして `1.0.0` を設定するか、ユーザーにバージョン番号の確認を求めてください。
 

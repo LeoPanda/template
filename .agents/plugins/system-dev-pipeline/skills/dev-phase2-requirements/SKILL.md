@@ -28,6 +28,7 @@ description: "PHASE 2 要件定義書を作成・精査・清書するための�
      7. モック制御アダプター層 (環境変数 `VITE_ENABLE_MOCK` 切替 & 直書きモック排除)
      8. 画面グランドデザイン基礎規範 (4px/8pxグリッド、HEX/px絶対値併記)
    - **第2層 (展開プロファイル選定ディシジョンツリー)**:
+     - Q0: AIエージェント用スキル・スクリプト（SKILL.md / Python CLI / PKM自動化）の開発か？ ➔ Yes: **Profile E** (Web/DB要件適用除外、Zero-Dependency Python + 2系統分離設計)
      - Q1: PCローカル環境（オフライン・ネイティブファイルアクセス等）での動作が必須か？ ➔ Yes: **Profile D**
      - Q2: フロントとバックエンドの単一プロセス・ビルドレス運用（HTMX等）が最優先か？ ➔ Yes: **Profile C**
      - Q3: 高頻度同時書き込みやSEO/SSRが必須か？ ➔ Yes: **Profile B**

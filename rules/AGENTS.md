@@ -1,6 +1,14 @@
-# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.3)
+# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.4)
 
 本プロジェクトおよび開発パイプラインにおいては、以下の開発・運用規約に従うものとする。
+
+---
+
+## 0. 規約適用スコープ境界（Scope Guard）
+- **適用対象**: 本規約は、システム開発プロジェクト（`PROJECT_STATE.md`、`docs/設計書/`、または初期スケルトン `skeletons/` が配備されたプロジェクト、あるいは明示的にシステム開発フェーズ `dev-phase1`〜`8` を実行する環境）に適用される。
+- **非システム開発環境（PKM Vault / 単一ナレッジベース等）における自動委譲**:
+  - `PROJECT_STATE.md` や `docs/設計書/` が存在せず、プロジェクト固有の基本規約（例: Obsidian Vault における `.gemini/GEMINI.md` 等）が配備されている環境では、日常のドキュメント作成・整理・知識管理タスクにおいて当該プロジェクトのローカル規範を最優先とする。
+  - その際、Dockerコンテナ再構成（規約第7項）や `docs/設計書/Current/` への強制配置（規約第10項）等のWeb/DBシステム開発固有の制約は適用除外（スリープ）とする。
 
 ---
 
@@ -31,10 +39,12 @@
    - **【絶対禁止】いかなる場合も `run_command` を呼び出してはならない。**
 3. 💻 **バックエンドエンジニア (`backend-engineer`) [Subagent]**:
    - **生SQL手動DDLの絶対禁止**、SQLAlchemy ORMによるモデル定義（1ファイル最大400行制限）、**Alembicマイグレーション厳格運用**。
+   - **Anti-God Module および DTO・パーサー分離**: DTO（Data Transfer Object）構造体およびパーサーは独立モジュール（`schemas/`, `*_dto.rs` 等）へ物理分離し、Controller/ハンドラー層はオーケストレーションに専念させ最大400行（推奨250〜300行以内）を維持する。ハンドラー内にダミーデータや直書きモックを保持せず、DBアクセス層または動的生成ヘルパーに委譲する。
    - **IAP JWT署名二重検証ミドルウェア**の実装（`core/auth.py`、`DEBUG=True` 時のみ安全なモック切替）、内部監視エンドポイント（`/api/internal/health`, `/api/internal/litestream/status`）、Pydantic Settings バリデーション（プレースホルダー即死ガードレール）の実装。
    - コマンド実行はバックエンド構文チェック・単体テスト（`uv run`, `python`, `pytest`, `ruff check` 等）およびコンテナ内コマンド実行に限定。Git/デプロイ/DB強制上書き/コンテナ起動停止は禁止。
 4. 🎨 **UI/UXデザイナー (`ui-designer`) [Subagent]**:
    - **画面グランドデザインの完全準拠**: 4px/8pxグリッド、HEX/px絶対値併記、ウィンドウ形態選定基準。
+   - **デイライトモード視認性担保**: コンポーネント内の文字色や背景色にダークモード前提の淡色・透過カラーを単独直書きすることを禁止し、セマンティックデザイントークン（CSS変数一元制御）またはTailwindの明暗ペア指定（例: `bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300`）を必須とする。
    - **Anti-God Component の徹底**: **1ファイル最大250行制限**、Custom Hooks/Servicesへの物理分離。
    - **コンポーネント内直書きモックの原則禁止**: MSWハンドラー構築と環境変数切替（`VITE_ENABLE_MOCK=true/false`）、OpenAPI型定義自動生成（`codegen:types`）の完全利用。
    - コマンド実行はパッケージ導入（`npm install` 等）およびローカルUIビルド（`npm run build` 等）に限定。Git/デプロイ/DB操作禁止。
@@ -59,20 +69,21 @@
 本システムは、事後修正ではなく初期段階から標準パターンを組み込む「Shift-Left」を徹底する。
 
 ### 4.1 第1層: 定常的コア設計規範 (全プロファイル共通)
-1. **Anti-God Component**: フロントエンド1ファイル最大250行制限、バックエンド1ファイル最大400行制限。
+1. **Anti-God Component / Module**: フロントエンド1ファイル最大250行制限、バックエンド1ファイル最大400行制限。DTO構造体およびパーサーは独立モジュール（`schemas/`, `*_dto.rs` 等）へ物理分離し、Controller/ハンドラー層はオーケストレーションに専念させ肥大化を防ぐ。
 2. **型定義自動同期**: OpenAPI ➔ TypeScript Codegen の完全利用。
 3. **シークレット厳格バリデーション**: Pydantic Settings によるプレースホルダー即死ガード。
 4. **統一タイムゾーン運用**: Aware UTC 保存 / JST 表示。
 5. **自動CIワークフロー**: GitHub Actions による自動検証。
 6. **構造化ロギング**: JST日時・`log_id` 自動バインド。
-7. **モック制御アダプター層**: 環境変数切替 (案C) ＋ 直書きモック排除 (案A)。
-8. **画面グランドデザイン規範**: 4px/8pxグリッド、HEX/px絶対値併記。
+7. **モック制御アダプター層**: 環境変数切替 (案C) ＋ 直書きモック排除 (案A)。**実環境・実結合モード（`VITE_ENABLE_MOCK=false`）におけるサイレントモックフォールバックを厳格禁止（Fail-Fast原則、通信・IPCエラー時は例外を即スローしてUI/ログに顕在化）**。
+8. **画面グランドデザイン規範**: 4px/8pxグリッド、HEX/px絶対値併記。**デイライトモード視認性担保のため、セマンティックデザイントークン（CSS変数一元制御）または明暗ペア指定（例: `bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300`）を必須とし、ダーク前提の淡色・透過カラー単独直書きを禁止**。
 
-### 4.2 第2層: システム展開プロファイル (Profile A〜D)
+### 4.2 第2層: システム展開プロファイル (Profile A〜E)
 - **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
 - **Profile B (Web SSR / フルマネージドRDB型)**: Next.js/Nuxt SSR または FastAPI + Cloud SQL (PostgreSQL) + Alembic。
 - **Profile C (静的MPA / 超軽量ツール型)**: FastAPI + Jinja2 + HTMX / 単一バイナリCLI。
-- **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + IStorageAdapter。
+- **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + IStorageAdapter + **結合テスト時の一時実ファイルDB動的プロビジョニング（UUID付与・WAL並行性/マイグレーション整合性検査・アトミック破棄）**。
+- **Profile E (AI Agent Skill / PKM 自動化・CLI型)**: Zero-Dependency Python 3（標準ライブラリのみ） + アトミックI/O + 2系統分離設計（Hard Gateスクリプト/Soft Engineプロンプト） + Linter/決定論的テストコード必須（Web/DB要件適用除外）。
 
 ---
 
@@ -85,15 +96,18 @@
 ---
 
 ## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.3)
-1. **試行錯誤・RCAのローカル固定蓄積**:
-   - 開発中に発生したエラー・失敗・手戻りのRCAは、**必ずカレントプロジェクト配下の `./wiki/`** に蓄積する。グローバル領域への直接書き込みは厳格に禁止する。
+1. **試行錯誤・RCAのローカル固定蓄積とパス互換性**:
+   - 開発中に発生したエラー・失敗・手戻りのRCAは、**必ずカレントプロジェクト配下の `./wiki/`（PKM Vault等では `./.gemini/wiki/`）** に蓄積する。グローバル領域への直接書き込みは厳格に禁止する。
 2. **二層分離 (Two-Tier Separation) と二段階進化**:
    - **Tier 1 (プロジェクト固有仕様)**: `./wiki/patterns/local/` に一時記録し、各フェーズ完了ゲートにおいて **`docs/`（仕様書・設計書）および `PROJECT_STATE.md` へ逆同期して案件内で完結**させる。中央の Knowledge Hub へは持ち出さない。
    - **Tier 2 (全体共通知見 / 汎用パターン)**: `./wiki/patterns/universal/` に記録し、PHASE 8 で `wiki-proposer` が行番号非依存の **標準化知見原票（Knowledge Claim MD）** として `~/.gemini/knowledge-hub/inbox/`（および `./promotions/`）へ投函する（`.patch` や個別 `PURPOSE.md` は生成しない）。
    - **Immutable Core + Local Overlay**: 3段階意味的整合性監査（`CORE_INVARIANTS.md` 監査・4分類矛盾監査・純度＆絶対行数バジェット監査）を通過しユーザー承認を得た知見は、公式プラグイン（Immutable Core）を直接書き換えず、`~/.gemini/knowledge-hub/overlay/LOCAL_FEEDBACK_RULES.md` へクリーン再生成反映して次案件から即時有効化する（`LOCAL_STANDALONE` でのパイプライン自体の改訂時は Core へ統合し、`PIPELINE_MANIFEST.json` と `FEEDBACK_LEDGER.md` を更新する）。
-3. **WikiSkill Context Isolation & State/Lineage 分離原則**:
+3. **2系統分離原則（Executable Specs優先 ＆ 頻度検疫）**:
+   - **系統A（決定論的バグ / Hard Gate）**: 構文不正、絶対パス混入、型エラー等の機械的バグは、プロンプトや自然言語Wikiパターンに書かず、**Linterルール（`ruff`, `obsidian_linter.py`等）または回帰テストコード（Executable Specs）へ直接吸収**する（プロンプト行数バジェットの浪費と否定命令汚染を根絶）。
+   - **系統B（セマンティック文脈判断 / Soft Engine）**: 意図や設計判断に関わる曖昧な事象は、単発例外を局所設定（個別Frontmatterロック等）で封じ込め、**過去30日以内に反復観測（原則 $N \ge 3$ 回）されたもののみを構造化Wikiパターンとして起票**する。
+4. **WikiSkill Context Isolation & State/Lineage 分離原則**:
    - 通常の推論タスクを実行するエージェントへ、生の Wiki パターン群や `FEEDBACK_LEDGER.md` を直接プロンプト注入してはならない。また、`AGENTS.md`、`SKILL.md`、`LOCAL_FEEDBACK_RULES.md` の本文（State）にはパターンIDや原票ID等の履歴記述（Lineage）を一切記載しない。
-4. **環境共通 Local Overlay の動的参照フック**:
+5. **環境共通 Local Overlay の動的参照フック**:
    - `~/.gemini/knowledge-hub/overlay/LOCAL_FEEDBACK_RULES.md` が存在する場合は、当該PC環境で有効な追加の環境オーバーレイ規約として本規約と併せて遵守すること。
 
 ---
@@ -128,9 +142,10 @@
 ## 10. ドキュメント管理およびバージョンライフサイクル規約 (docs/ 運用ルール)
 本テンプレートの開発・バージョンアップに伴い、過去の設計文書が現在の実装や検証のノイズとなることを防止するため、`docs/` 配下は以下のルールに従って厳格に分離・運用する。
 1. **2大カテゴリへの完全分離**: `docs/設計書/`（確定・策定されたシステム設計仕様書群）と `docs/検討課題/`（将来バージョンに向けた検討資料群）に完全分離する。
-2. **バージョン別フォルダ分離 (Vn.m)**: サブフォルダはバージョン単位（`V1.0`, `V2.0`, `V2.1`, `V2.2`, `V2.3` 等）に分離して管理する。
+2. **バージョン別フォルダ分離 (vn.m)**: サブフォルダはバージョン単位（`v1.0`, `v2.0`, `v2.1`, `v2.2`, `v2.3`, `v2.4` 等、小文字 `v` 統一）に分離して管理する。
 3. **Current フォルダとリリース時アーカイブ**: 現在開発・適用中の設計文書はすべて `docs/設計書/Current/` 配下に配置し、リリース完了時点で該当バージョンのフォルダへ移動・アーカイブする。
 4. **デフォルト参照先と Single Source of Truth**: 特別な指定がない限り、ユーザー指示および全AIエージェントの推論・実装・相互チェックは **`docs/設計書/Current/` 配下の文書を唯一の正（Single Source of Truth）として行う**。過去バージョンや検討課題はデフォルトの走査対象から除外する。
+5. **初期セットアップ時の静的文書配置禁止**: プロジェクト初期化（PHASE 1）において、`docs/` 直下への設計文書雛形（`要件定義書.md` 等）の静的コピーは禁止し、ディレクトリ構造（`docs/設計書/Current/`, `docs/検討課題/` 等）の作成のみにとどめる。各種設計文書はプロファイル確定後に `docs/設計書/Current/` 配下へ直接策定・配置する。
 
 ---
 

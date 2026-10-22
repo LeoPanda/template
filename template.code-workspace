@@ -8,7 +8,9 @@
     "python.languageServer": "Jedi",
     "workbench.editorAssociations": {
       "*.md": "vscode.markdown.preview.editor",
-      "*.eml": "emlviewer.eml",
+      "*.eml": "emlviewer.eml"
     },
-  },
+    "workbench.secondarySideBar.defaultVisibility": "hidden",
+    "antigravity.agent.openOnStartup": false
+  }
 }
