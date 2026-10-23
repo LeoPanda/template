@@ -74,7 +74,7 @@ flowchart TD
 
 - **ステータス表記**: `PHASE_1_SETUP`
 - **目的**: 新規開発プロジェクトの初期実行基盤、検証済み静的スケルトン、ローカルナレッジ領域、および状態管理台帳を自動生成・配備する。
-- **開始条件 (Entry Criteria)**: Antigravity で対象プロジェクトディレクトリが開かれ、`system-dev-pipeline` プラグインが有効であること。
+- **開始条件 (Entry Criteria)**: 対象プロジェクト専用の作業ディレクトリが準備され、Antigravity でワークスペースとして開かれており、`system-dev-pipeline` プラグインが有効であること。
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`)
 - **詳細作業工程 (`PROJECT_STATE.md` 準拠)**:
   1. `dev-phase1-setup` スキルの発動。
