@@ -3,7 +3,7 @@ name: dev-review-system
 description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼働耐性、セキュリティ、平文シークレット排除、本番モック排除二重防御、Alembic起動保証、ロールバック計画の完全性を総合監査するスキル。"
 ---
 
-# システム総合レビュー (System Comprehensive Review) スキル V2.4
+# システム総合レビュー (System Comprehensive Review) スキル V2.5
 
 - **主担当エージェント**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **委譲元 / 統括**: 👑 プロジェクトコンダクター (`conductor`)
@@ -46,7 +46,8 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ### 第2層: システム展開プロファイル別適合監査
 - **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**:
   - IAP認証有効時、JWT署名検証（Google公開鍵による署名検証、aud/iss検証）が有効化されているか。
-  - Litestreamレプリケーション設定（バケット名、パス、同期監視 `/api/internal/litestream/status`）が正しく稼働しているか。
+  - Litestreamレプリケーションがスーパーバイザー起動方式（`exec litestream run -- ...`）によりバックグラウンドで安全に常駐監視されているか。
+  - 同期監視エンドポイント（`/api/internal/litestream/status`）が正しく稼働しているか。
   - Cloud Run 最大インスタンス数1（`max-instances=1`）が保証され、単一ライター保護が保たれているか。
   - SQLite WALモードおよびバッチマイグレーション（`render_as_batch=True`）の稼働保証。
 - **Profile B (Web SSR / フルマネージドRDB型)**:

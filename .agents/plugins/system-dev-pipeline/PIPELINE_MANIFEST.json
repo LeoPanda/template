@@ -1,7 +1,7 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.4.1",
-  "released_at": "2026-10-23T10:00:00+09:00",
+  "version": "2.5.0",
+  "released_at": "2026-10-25T12:00:00+09:00",
   "invariants_version": "1.0.0",
   "absorbed_patterns": [
     {
@@ -115,6 +115,73 @@
         "skills/dev-phase6-testing/SKILL.md"
       ],
       "summary": "Profile D (Tauri/SQLite WAL) における結合テスト時の一時実ファイルDB動的プロビジョニングとアトミック破棄"
+    },
+    {
+      "pattern_id": "PAT-SYS-002",
+      "claim_ids": [
+        "CLAIM-20261024-movielog-PAT-SYS-002"
+      ],
+      "absorbed_in_version": "2.5.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "agents/conductor.md",
+        "skills/dev-metrics-collector/SKILL.md"
+      ],
+      "summary": "メトリクス集計実行後の PROJECT_STATE.md 定量サマリ即時反映・同期義務化"
+    },
+    {
+      "pattern_id": "PAT-SYS-003",
+      "claim_ids": [
+        "CLAIM-20261024-movielog-PAT-SYS-003"
+      ],
+      "absorbed_in_version": "2.5.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/dev-metrics-collector/SKILL.md",
+        "skills/dev-phase8-rules/SKILL.md",
+        "templates/システム改訂ルール.md"
+      ],
+      "summary": "定量メトリクス集計JSONデフォルト出力先統一(metrics/)と分散出力廃止"
+    },
+    {
+      "pattern_id": "PAT-SYS-004",
+      "claim_ids": [
+        "CLAIM-20261024-system-dev-dashboard-PAT-SYS-004"
+      ],
+      "absorbed_in_version": "2.5.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/dev-metrics-collector/SKILL.md",
+        "skills/dev-metrics-collector/scripts/reporters.py"
+      ],
+      "summary": "全フェーズ推移レポート (metrics/development_phase_report.md) の標準成果物化と自動出力"
+    },
+    {
+      "pattern_id": "PAT-SYS-005",
+      "claim_ids": [
+        "CLAIM-20261024-movielog-PAT-SYS-005"
+      ],
+      "absorbed_in_version": "2.5.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/dev-metrics-collector/scripts/parsers.py",
+        "skills/dev-metrics-collector/scripts/scoring.py"
+      ],
+      "summary": "レビュー報告書解析の正規表現堅牢化および複数セッション時の修復ターン数正規化"
+    },
+    {
+      "pattern_id": "PAT-SYS-006",
+      "claim_ids": [
+        "CLAIM-20261024-system-dev-dashboard-PAT-SYS-006"
+      ],
+      "absorbed_in_version": "2.5.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/wiki-proposer/SKILL.md",
+        "scripts/pipeline-reconciler.sh",
+        "rules/AGENTS.md"
+      ],
+      "summary": "Central Knowledge Hub 全域における pattern_id 一意性保証と昇格時Fail-Fastバリデーション"
     }
   ]
 }

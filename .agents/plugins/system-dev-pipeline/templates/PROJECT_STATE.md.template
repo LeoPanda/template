@@ -9,7 +9,7 @@
 - **現行バージョン**: v{{APP_VERSION}}
 - **EXECUTION_MODE**: {{EXECUTION_MODE}} <!-- [GLOBAL_PLUGIN / LOCAL_STANDALONE] -->
 - **TEMPLATE_SOURCE**: {{TEMPLATE_SOURCE}}
-- **Knowledge Hub 連携状態**: SYNCED (Immutable Core v2.4.0 + Local Overlay)
+- **Knowledge Hub 連携状態**: SYNCED (Immutable Core v2.5.0 + Local Overlay)
 - **現在の作業ブランチ**: main
 - **最終更新日時**: {{UPDATED_AT}}
 - **最終更新者**: 👑 プロジェクトコンダクター (Single Writer)
@@ -74,16 +74,17 @@
   - [ ] 🛡️ `qa-engineer`: `dev-review-system` システム総合レビュー (判定: RELEASE APPROVED)
     - [ ] 本番用 `VITE_ENABLE_MOCK=false` 二重防御検証
     - [ ] IAP JWT 署名検証ミドルウェア有効化検証
-    - [ ] `entrypoint.sh` による起動時 Alembic マイグレーション実行保証
+    - [ ] Profile A の `litestream run` スーパーバイザー起動保証および Alembic 起動時マイグレーション保証
     - [ ] Litestream レプリケーション設定および監視エンドポイント検証
   - [ ] 👑 コンダクター: 本番環境（Cloud Run等）初回デプロイ実行（`--quiet` 非対話フラグ＋タイムアウト監視）
   - [ ] 🛡️ `qa-engineer`: IAM / IAP セキュリティ設定監査
   - [ ] **【承認ゲート】👤 ユーザー: 本番稼働確認の明示的承認** (承認日: )
 - [ ] **PHASE 8: ドキュメント改訂管理・Central Knowledge Hub 自己進化の開始**
-  - [ ] 👑 コンダクター: 定量メトリクス集計 (`dev-metrics-collector`)
+  - [ ] 👑 コンダクター: 定量メトリクス集計 (`dev-metrics-collector` / 総合レポート・推移レポート・JSON出力)
+  - [ ] 👑 コンダクター: `PROJECT_STATE.md` 定量サマリ即時同期
   - [ ] 👑 コンダクター: `wiki-compactor` によるWiki整理・原票クラスタリング
-  - [ ] 👑 コンダクター: `wiki-proposer` による標準化知見原票（`CLAIM-*.md`）生成 & `~/.gemini/knowledge-hub/inbox/` 投函
-  - [ ] 🛡️ `qa-engineer`: 3段階意味的整合性監査（新・複合検証ゲート Gate 1〜4）実行
+  - [ ] 👑 コンダクター: `wiki-proposer` による標準化知見原票（`CLAIM-*.md`）生成 & `~/.gemini/knowledge-hub/inbox/` 投函 (Hub全域走査による未使用連番一意採番)
+  - [ ] 🛡️ `qa-engineer`: 3段階意味的整合性監査（新・複合検証ゲート Gate 1〜4、pattern_id 一意性監査）実行
   - [ ] **【承認ゲート】👤 ユーザー: `ask_question` モーダルによる知見昇格・裁定承認 (`./TEMPLATE_PROMOTIONS.md`)** (承認日: )
   - [ ] 👑 コンダクター: `pipeline-reconciler.sh` による `overlay/LOCAL_FEEDBACK_RULES.md` クリーン再生成（または Core 統合）
   - [ ] ⚙️ `dev-git-release`: `feature` を `main` へ Squash Merge (`Release v1.0.0`)、Push、次期 `feature` 切り直し
@@ -92,7 +93,25 @@
 
 ---
 
-## 2. システム改訂管理 (PHASE 8完了以降)
+## 2. プロジェクト定量メトリクスサマリ (最新集計)
+- **総合健全性スコア**: 未測定 (PHASE 8 にて自動集計)
+- **総合品質グレード**: -
+- **カテゴリ別スコア**:
+  - リソース効率: - / 25.0 点
+  - 品質・堅牢性: - / 35.0 点
+  - ナレッジ進化: - / 15.0 点
+  - ガバナンス  : - / 25.0 点
+- **通算トークン消費**: - tokens
+- **通算ツール呼出数**: - 回
+- **正味開発規模(LOC)**: - 行
+- **成果物リンク**:
+  - [総合健全性診断レポート](./metrics/system_health_report.md)
+  - [開発フェーズ推移レポート](./metrics/development_phase_report.md)
+  - [定量メトリクス集計JSON](./metrics/development-metrics-summary.json)
+
+---
+
+## 3. システム改訂管理 (PHASE 8完了以降)
 
 - **現在の改訂ステータス**: IDLE
 - **進行中の改訂依頼番号**: なし

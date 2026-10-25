@@ -3,7 +3,7 @@ name: dev-phase7-release
 description: "PHASE 7 本番リリースフェーズ。システム総合レビュー (dev-review-system) の合格確認、本番適用作業手順書の生成、本番デプロイ実行、Litestream同期監視、セキュリティ設定の検証を行う。"
 ---
 
-# PHASE 7: 本番環境へのリリースと検証 V2.3
+# PHASE 7: 本番環境へのリリースと検証 V2.5
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)（デプロイ統括・専任実行）
 - **システム総合レビュー担当**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
@@ -28,7 +28,7 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
 
 ### 2. システム総合レビュー (`dev-review-system`) ゲートの通過確認
 - 手順書作成後、コンダクターは 🛡️ `qa-engineer` に `dev-review-system` を委譲します。
-- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、非root実行、起動時Alembic保証、内部ヘルスチェック (`/internal/health`, `/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
+- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、Profile A の `litestream run` スーパーバイザー起動保証、非root実行、起動時Alembic保証、内部ヘルスチェック (`/internal/health`, `/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
 - **進行前提条件**:
   - 判定が **`RELEASE APPROVED`** であることを確認してください。
   - `RELEASE BLOCKED` の場合はデプロイを即時停止し、指摘されたセキュリティ・稼働課題を解消するまで進行してはなりません。

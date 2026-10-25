@@ -1,18 +1,17 @@
 # Profile A 詳細設計書 (Profile A Golden Path Detailed Specification)
 
-文書バージョン: 1.0  
-作成日: 2026-10-15  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V2.4  
+文書バージョン: 2.5  
+作成日: 2026-10-25  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V2.5.0  
 ステータス: 正式設計書 (Approved Specification)  
 関連文書:
-- [V2.4改変計画書.md](./V2.4改変計画書.md)
-- [V2.3システムプロファイル構造設計書.md](../V2.3/V2.3システムプロファイル構造設計書.md)
-- [AI駆動開発テンプレート_事前組込推奨要件・設計・留意事項_総合レポート.md](../../検討課題/V2.2/AI駆動開発テンプレート_事前組込推奨要件・設計・留意事項_総合レポート.md)
-- [システムプロファイル設計および事前組込アーキテクチャ検討レポート.md](../../検討課題/V2.2/システムプロファイル設計および事前組込アーキテクチャ検討レポート.md)
-- [追加検討課題_モックアップ制御と画面デザイン標準化.md](../../検討課題/V2.2/追加検討課題_モックアップ制御と画面デザイン標準化.md)
-- [レビューシステム設計書V2.4.md](./レビューシステム設計書V2.4.md)
-- [AI駆動システム開発フェーズ定義書V2.4.md](./AI駆動システム開発フェーズ定義書V2.4.md)
-- [エージェント設計書V2.4.md](./エージェント設計書V2.4.md)
+- [V2.5改変計画書.md](./V2.5改変計画書.md)
+- [AI駆動システム開発フェーズ定義書V2.5.md](./AI駆動システム開発フェーズ定義書V2.5.md)
+- [AI駆動システム開発手順書V2.5.md](./AI駆動システム開発手順書V2.5.md)
+- [定量測定・フィードバック設計書V2.5.md](./定量測定・フィードバック設計書V2.5.md)
+- [エージェント設計書V2.5.md](./エージェント設計書V2.5.md)
+- [状態管理機構設計書V2.5.md](./状態管理機構設計書V2.5.md)
+- [レビューシステム設計書V2.5.md](./レビューシステム設計書V2.5.md)
 - [01_グランドデザイン基本仕様書.md](../../../.agents/plugins/system-dev-pipeline/templates/グランドデザイン/01_グランドデザイン基本仕様書.md)
 - [02_UIコンポーネントカタログ及び実装パターン.md](../../../.agents/plugins/system-dev-pipeline/templates/グランドデザイン/02_UIコンポーネントカタログ及び実装パターン.md)
 - [03_画面仕様書テンプレート.md](../../../.agents/plugins/system-dev-pipeline/templates/グランドデザイン/03_画面仕様書テンプレート.md)
@@ -314,15 +313,14 @@ else
 fi
 cd /app
 
-# 3. Litestream レプリケーション並行起動 & Uvicorn 起動
+# 3. Litestream スーパーバイザー起動 (SIGTERM シグナル伝播と最終 WAL フラッシュ同期保証)
 if [ -n "$LITESTREAM_BUCKET" ]; then
-    echo "--> Starting Litestream replication in background..."
-    litestream replicate -config /etc/litestream.yml &
-    LITESTREAM_PID=$!
+    echo "--> Starting Uvicorn under Litestream supervisor on port ${PORT:-8080}..."
+    exec litestream run -config /etc/litestream.yml -- uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
+else
+    echo "--> Starting Uvicorn server standalone on port ${PORT:-8080}..."
+    exec uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
 fi
-
-echo "--> Starting Uvicorn server on port ${PORT:-8080}..."
-exec uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
 ```
 
 ---
@@ -858,6 +856,6 @@ jobs:
 1. **仕様の具体性**:
    `entrypoint.sh`, `session.py`, `env.py`, `auth.py`, `useImageCompressor.ts`, `ci.yml` など、主要基盤コードがそのまま実装・スケルトン配置可能なレベルで具体化されていること。
 2. **整合性**:
-   [V2.3システムプロファイル構造設計書.md](../V2.3/V2.3システムプロファイル構造設計書.md) および [V2.4改変計画書.md](./V2.4改変計画書.md) と完全に整合していること。
+   [V2.3システムプロファイル構造設計書.md](../V2.3/V2.3システムプロファイル構造設計書.md) および [V2.4改変計画書.md](../v2.4/V2.4改変計画書.md) と完全に整合していること。
 3. **相対パス規約の遵守**:
    すべての関連文書へのリンクが相対パスで記述されていること。

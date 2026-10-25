@@ -1,4 +1,4 @@
-# Antigravity AI-Driven System Dev Pipeline V2.4 🚀
+# Antigravity AI-Driven System Dev Pipeline V2.5 🚀
 
 Google Antigravity のマルチエージェントオーケストレーション、カスタムスキル（Skills）、およびプラグインアーキテクチャを活用し、**新規プロジェクトの環境準備から要件定義、基本設計、環境構築、ウォークスルー、自動テスト、本番リリース、そしてマルチプロジェクト・マルチ環境を跨ぐ自己進化・改訂運用に至る全開発ライフサイクルを自律的に統制・自動化する開発基盤テンプレート**です。
 
@@ -6,72 +6,72 @@ Google Antigravity のマルチエージェントオーケストレーション�
 
 ## 📌 概要
 
-V1.0（単一エージェント）、V2.0（Conductor ＋ 3エージェント分業）、V2.1（5大エージェント協調、3大レビューゲート、WikiSkill自己進化ループ、定量測定機構）、V2.2（Shift-Left 静的スケルトン基盤、2層構造プロファイル体系 Profile A〜E、画面グランドデザイン、MSWモック制御）、V2.3（Central Knowledge Hub、3段階意味的整合性監査、Immutable Core / Local Overlay 二層プラグイン機構）を経て、**Version 2.4 (V2.4)** では実稼働プロジェクトの運用成果を結集し、以下の **3大ピラー** を軸に抜本的な進化を遂げました：
+V1.0（単一エージェント）、V2.0（Conductor ＋ 3エージェント分業）、V2.1（5大エージェント協調、3大レビューゲート、WikiSkill自己進化ループ、定量測定機構）、V2.2（Shift-Left 静的スケルトン基盤、2層構造プロファイル体系 Profile A〜E、画面グランドデザイン、MSWモック制御）、V2.3（Central Knowledge Hub、3段階意味的整合性監査、Immutable Core / Local Overlay 二層プラグイン機構）、V2.4（SemVer 2.0.0 完全準拠、開発手順書・設計書群再編、DTO/パーサー物理分離・デイライトUI等の6大知見本流統合）を経て、**Version 2.5 (V2.5)** では実稼働プロジェクトの運用成果を結集し、以下の **3大ピラー** を軸に抜本的な進化を遂げました：
 
 1. **Central Knowledge Hub 蓄積知見の公式本流統合 (Core Integration)**:
-   先行運用されてきた 6 件の高品質な汎用知見原票（DTO/パーサー物理分離、デイライトUI視認性、Fail-Fastモック制御、Tauri実ファイルDB動的プロビジョニング、2系統分離、改定履歴表除外）を公式パイプライン（Immutable Core）へ本流統合し、Local Overlay の行数バジェットを完全解放。
-2. **公式セマンティックバージョニング（SemVer 2.0.0）への完全準拠**:
-   コードエコシステム（SemVer 3桁）とドキュメント・改訂規則（Vn.m 2桁）の二重基準を解消し、システム・Git・改訂番号・ドキュメント命名の一元的な体系化と、Gitタグ二重プレフィックス脆弱性（`vV2.0`）を完全根絶。
-3. **開発手順書・フェーズ定義書および正本設計書群の全面再編**:
-   `PROJECT_STATE.md` の作業工程に完全同期し、各フェーズにおいて「👤 ユーザーが行うべきこと（User Action）」と「🤖 AIによって行われる作業（AI Execution）」を明確に対比した実践的オペレーション体系を確立。
+   先行運用されてきた 5 件の高品質な汎用知見原票（PAT-SYS-002: メトリクス即時反映、PAT-SYS-003: JSON出力パス統一、PAT-SYS-004: フェーズ推移レポート生成、PAT-SYS-005: レビューパーサー正規表現堅牢化、PAT-SYS-006: グローバル pattern_id 一意性保証）を公式パイプライン（Immutable Core）へ本流統合し、Local Overlay の行数バジェット（上限80行）を完全解放。
+2. **定量測定エンジン (`dev-metrics-collector`) のアーキテクチャ刷新**:
+   旧来の 972 行の一枚岩スクリプトを、Profile E（Zero-Dependency Python 3）制約を維持したまま 4 つの責務別モジュール（`metrics_types.py`, `parsers.py`, `scoring.py`, `reporters.py`, `metrics_collector.py`）へ物理分割。`start_time` 基準二段時系列ソート、動的ターン予算モデル、実測自律修復追跡を導入し、全モジュール 400 行以内厳守（Anti-God Module 解消）と測定精度の飛躍的向上を両立。
+3. **パイプライン全域多次元総点検と設計書・基盤コード V2.5 全面同期**:
+   全19スキル、全5エージェント、基盤スクリプト、設計書、規約の4大監査軸（齟齬・重複・不足・純度）を網羅監査。`pipeline-reconciler.sh` のコアロジックを `scripts/reconciler_core.py` へ分離、Profile A スケルトンの `litestream run` スーパーバイザー起動方式移行、Profile D スケルトンの `temp_db` 一時実ファイル動的プロビジョニング実装、および `docs/設計書/Current/` 配下の全10設計書を V2.5 仕様へ刷新。
 
 ---
 
-## ✨ V2.4 の主な新機能と進化ポイント（3大ピラー）
+## ✨ V2.5 の主な新機能と進化ポイント（3大ピラー）
 
 ```mermaid
 flowchart TD
     subgraph P1["Pillar 1: Central Knowledge Hub 知見本流統合 (Core Integration)"]
-        P1_1["PAT-CODE-001: バックエンド DTO・パーサー物理分離と400行制限"]
-        P1_2["PAT-UI-001: デイライト視認性担保とTailwind明暗ペア(dark:)必須化"]
-        P1_3["PAT-MOCK-001: 実結合時サイレントモックフォールバック厳格禁止(Fail-Fast)"]
-        P1_4["PAT-TEST-001: Profile D SQLite WAL一時実ファイルDB動的プロビジョニング"]
-        P1_5["PAT-REV-001: PROJECT_STATE.md の改定履歴表除外(現在状態インジケータ純化)"]
-        P1_6["PAT-002: 決定論的バグ(Hard Gate)と文脈判断(Soft Engine)の2系統物理分離"]
+        P1_1["PAT-SYS-002: メトリクス集計後の PROJECT_STATE.md 即時反映・同期義務化"]
+        P1_2["PAT-SYS-003: メトリクス成果物出力先の metrics/ への完全集約・統一"]
+        P1_3["PAT-SYS-004: フェーズ・改訂ターン別推移レポート (development_phase_report.md) 標準成果物化"]
+        P1_4["PAT-SYS-005: レビュー報告書パーサー堅牢化と修復ターン数正規化"]
+        P1_5["PAT-SYS-006: Central Knowledge Hub 全域 pattern_id 一意性保証・昇格時Fail-Fast"]
+        P1_6["知見原票の archive/upstreamed/ 移管 & Overlay バジェット解放"]
     end
 
-    subgraph P2["Pillar 2: SemVer 2.0.0 完全準拠と二重基準解消"]
-        P2_1["ソフトウェア本体/環境変数: APP_VERSION=X.Y.Z (数値3桁、先頭v禁止)"]
-        P2_2["管理台帳/Git/UIバッジ: vX.Y.Z (小文字v + 数値3桁)"]
-        P2_3["改訂依頼番号: MAJOR.MINOR.xxx (例: 1.0.001)"]
-        P2_4["ドキュメント管理/ログ命名: vn.m (小文字v + 2桁)"]
-        P2_5["dev-git-release: 先頭v/Vサニタイズによる二重プレフィックス防止ガード"]
+    subgraph P2["Pillar 2: 定量測定エンジン (dev-metrics-collector) アーキテクチャ刷新"]
+        P2_1["4モジュール物理分割 (Anti-God Module 解消 / 全ファイル400行以内)"]
+        P2_2["start_time 基準二段時系列ソート (mtime 依存脱却)"]
+        P2_3["動的ターン予算モデル & 実測自律修復ターン追跡"]
+        P2_4["dataclass 型スキーマ導入 (Zero-Dependency 型安全)"]
+        P2_5["例外捕捉限定化と詳細診断ロギング"]
     end
 
-    subgraph P3["Pillar 3: 開発手順書・フェーズ定義書および正本設計書の全面改訂"]
-        P3_1["開発手順書V2.4: ユーザーアクションとAI実行の対比構造"]
-        P3_2["フェーズ定義書V2.4: PROJECT_STATE作業工程と1対1完全同期"]
-        P3_3["docs/設計書/Current/: V2.4正本文書群への集約とV2.3アーカイブ退避"]
-        P3_4["テンプレート群同期: 要件/スキーマ/ロジック/手順書テンプレートの最新化"]
+    subgraph P3["Pillar 3: パイプライン全域多次元総点検 & 基盤コード V2.5 全面同期"]
+        P3_1["全域多次元総点検: 全19スキル・エージェント・スクリプト・設計書のクロスチェック"]
+        P3_2["scripts/reconciler_core.py: pipeline-reconciler.sh の Python コア分離 (379行)"]
+        P3_3["Profile A: entrypoint.sh の litestream run スーパーバイザー起動方式移行"]
+        P3_4["Profile D: conftest.py の temp_db 一時実ファイルDB動的プロビジョニング"]
+        P3_5["docs/設計書/Current/: 全10設計書を V2.5 規格へ全面改訂・v2.4アーカイブ退避"]
     end
 
-    P1 & P2 & P3 --> V24["AI駆動システム開発テンプレート V2.4.0"]
+    P1 & P2 & P3 --> V25["AI駆動システム開発テンプレート V2.5.0"]
 ```
 
-### 1. 本流統合された 6 大知見の詳細仕様（Pillar 1）
-- **バックエンド DTO・パーサー物理分離と Anti-God Module (400行制限) 遵守 (PAT-CODE-001)**:
-  Controller/ハンドラー層から DTO 構造体およびリクエストパーサーを独立モジュール（`schemas/`, `*_dto.rs` 等）へ物理分離。Controller はオーケストレーションに専念させ、直書きモックを排除。
-- **デイライトモード視認性担保と Tailwind 明暗ペア指定必須化 (PAT-UI-001)**:
-  ダークモード前提の淡色・透過カラー（`text-blue-200` 等）の単独直書きを禁止。セマンティックデザイントークンまたは Tailwind 明暗ペア（`text-blue-800 dark:text-blue-200`）の指定を義務化。
-- **実結合モード時のサイレントモックフォールバック厳格禁止 (Fail-Fast原則 / PAT-MOCK-001)**:
-  実環境・実結合モード（`VITE_ENABLE_MOCK=false`）において、API/IPC通信エラー発生時にモックデータへサイレントフォールバックすることを禁止。エラー時は例外を即座にスローして UI/ログに顕在化。
-- **Profile D 結合テスト時の一時実ファイルDB動的プロビジョニング (PAT-TEST-001)**:
-  デスクトップアプリの結合テストにおいて、インメモリDBではなく一時ディレクトリ配下に UUID 付き実ファイルDBを動的プロビジョニングし、マイグレーションとWAL並行性を本番同等に検証後アトミック破棄。
-- **`PROJECT_STATE.md` の改定履歴表適用除外 (PAT-REV-001)**:
-  現在状態の動的インジケータである `PROJECT_STATE.md` を改定履歴表の対象外とし、作業履歴は `/revise-log/vn.m/` に一元化して台帳の肥大化を防止。
-- **決定論的バグ(Hard Gate)と文脈判断(Soft Engine)の2系統物理分離 (PAT-002)**:
-  構文不正や型エラー等の機械的バグは自然言語プロンプトに書かず Linter やテストコードへ直接吸収。
+### 1. 本流統合された 5 大知見の詳細仕様（Pillar 1）
+- **`PROJECT_STATE.md` 定量メトリクス同期義務化 (PAT-SYS-002)**:
+  `dev-metrics-collector` 実行後、コンダクターはレポート確認と不可分な一連処理として、`metrics/system_health_report.md` の主要指標（総合スコア、グレード、各カテゴリスコア、トークン数、ツール呼出数）を `PROJECT_STATE.md` へ即時同期し、ヘッダー更新日時を更新する。
+- **メトリクス成果物出力先の `metrics/` への完全集約・統一 (PAT-SYS-003)**:
+  集計サマリJSON（`development-metrics-summary.json`）、総合レポート（`system_health_report.md`）、推移レポート（`development_phase_report.md`）の出力先を `metrics/` に統一。旧来の `docs/plans/metrics/` への分散出力を完全廃止し、ドキュメント・規約・スキルの参照パスを一元化。
+- **フェーズ・改訂ターン別推移レポートの標準成果物化 (PAT-SYS-004)**:
+  全セッション通算の健全性スコアに加え、PHASE 1〜8 および各改訂ターン別の所要時間・エラー数・会話ターン数の推移を自動集計し、`metrics/development_phase_report.md` を標準成果物として自動生成・配備。
+- **レビューパーサー堅牢化と修復ターン数正規化 (PAT-SYS-005)**:
+  レビュー報告書解析において Markdown 太字記号（`**`）、表記揺れ（`総合判定`/`総合合否判定`/`判定結果`/`合否判定`）、各種括弧を包括許容。通算集計時の自律修復ターン数はセッション数で正規化した平均値を算出。
+- **Central Knowledge Hub pattern_id 一意性保証 (PAT-SYS-006)**:
+  起票時（`wiki-proposer`）に Knowledge Hub 全域を走査して未使用最新連番を一意採番。昇格時（`reconciler_core.py`）および Semantic Auditor（Gate 1）において重複衝突を Fail-Fast 検出し、ID衝突を未然に防止。
 
-### 2. SemVer 2.0.0 統一マッピング（Pillar 2）
-- **ソフトウェア本体**: `MAJOR.MINOR.PATCH`（数値3桁、先頭 `v` 禁止。例: `.env` の `APP_VERSION=1.0.0`、`package.json`、`Cargo.toml`）
-- **管理台帳・Git・UI**: `vMAJOR.MINOR.PATCH`（小文字 `v` ＋ 3桁。例: `PROJECT_STATE.md`、Gitタグ `v1.0.0`、UIバッジ）
-- **改訂依頼番号**: `MAJOR.MINOR.xxx`（例: `1.0.001`、`2.0.001`。4桁化による肥大化を防ぎつつソート性を維持）
-- **ドキュメント管理**: `vn.m`（小文字 `v` ＋ 2桁。例: `docs/設計書/v2.4/`、`/revise-log/v1.0/`。大文字 `V` を廃止）
-- **リリース保護ガード**: `dev-git-release` により、`.env` に誤って `V2.0` や `v1.0.0` が記載されていても先頭 `v`/`V` を自動サニタイズし、`vV2.0` 等の二重プレフィックスを機械的に完全遮断。
+### 2. 定量測定エンジン物理分割構成（Pillar 2）
+単一の `metrics_collector.py`（972行）を、Profile E（Zero-Dependency Python 3）制約を維持したまま、以下の4つの責務別モジュールへ物理分割。全モジュールは最大400行制限を厳守：
+- `metrics_types.py` (114行): dataclasses 型スキーマ定義
+- `parsers.py` (386行): `start_time` 基準二段時系列ソート、自律修復実測追跡、Git空ツリーLOC取得
+- `scoring.py` (174行): 動的ターン予算モデル、実測修復ターン反映、12指標スコアリング
+- `reporters.py` (230行): Markdown総合・推移レポート生成、JSON出力（`metrics/` 集約）
+- `metrics_collector.py` (136行): CLIオーケストレーション
 
 ---
 
-## 👥 エージェント体制と役割分担 (5大エージェント協調モデル V2.4)
+## 👥 エージェント体制と役割分担 (5大エージェント協調モデル V2.5)
 
 ```
                     ┌────────────────────────────────────────┐
@@ -105,18 +105,18 @@ flowchart TD
                          │ ⚙️ 決定論的ツール / スキル │
                          │ ・Git管理 (dev-git-*)    │
                          │ ・デプロイ (dev-db-*)    │
-                         │ ・Hub調停 (reconciler.sh)│
+                         │ ・Hub調停 (reconciler_core)
                          │ ・標準コマンド統括実行   │
                          └──────────────────────────┘
 ```
 
-| ロール | 種別 / 推奨モデル | 主な担当スコープ (V2.4) | 権限・ガードレール (`CORE_INVARIANTS.md`) |
+| ロール | 種別 / 推奨モデル | 主な担当スコープ (V2.5) | 権限・ガードレール (`CORE_INVARIANTS.md`) |
 | :--- | :--- | :--- | :--- |
-| 👑 **Conductor** | メイン / `pro` | 全体進行管理、`PROJECT_STATE.md` 一元更新（**Single Writer**）、PHASE 1 Hub検知・スケルトン展開、標準コマンド統括実行、Git・デプロイ専任実行、PHASE 8 知見投函・Overlay再生成 | 全ツール利用可能（**非対話CLIフラグ強制・`schedule` タイマー保護: `INV-06`**） |
+| 👑 **Conductor** | メイン / `pro` | 全体進行管理、`PROJECT_STATE.md` 一元更新（**Single Writer**）、**メトリクス即時同期 (PAT-SYS-002)**、PHASE 1 Hub検知・スケルトン展開、標準コマンド統括実行、Git・デプロイ専任実行、PHASE 8 知見投函・Overlay再生成 | 全ツール利用可能（**非対話CLIフラグ強制・`schedule` タイマー保護: `INV-06`**） |
 | 📐 **Architect** | サブ / `pro` | 要件定義書（Profile A〜E選定）、4大基本設計書作成、外部API二重キャッシュ・Fail-Fastモック仕様設計、Alembic前提スキーマ設計、API仕様書同期 | `enable_write_tools: true`（**`run_command` は厳格禁止: `INV-02`**） |
-| 💻 **Backend Engineer** | サブ / `pro` | バックエンドAPI、SQLAlchemyモデル（400行制限）、**DTO・パーサー物理分離（PAT-CODE-001）**、Alembicマイグレーション、IAP JWT署名二重検証ミドルウェア、ヘルスチェック実装 | 単体テスト・構文検証のみ許可（**生SQL禁止: `INV-05`、Git/デプロイ/DB上書き/コンテナ起動停止は禁止: `INV-02`**） |
+| 💻 **Backend Engineer** | サブ / `pro` | バックエンドAPI、SQLAlchemyモデル（400行制限）、**DTO・パーサー物理分離（PAT-CODE-001）**、Alembicマイグレーション、IAP JWT署名二重検証ミドルウェア、内部監視エンドポイント実装 | 単体テスト・構文検証のみ許可（**生SQL禁止: `INV-05`、Git/デプロイ/DB上書き/コンテナ起動停止は禁止: `INV-02`**） |
 | 🎨 **UI Designer** | サブ / `flash` または `pro` | 画面仕様書（グランドデザイン新規格準拠）、モダンフロントエンド画面実装、**1ファイル最大250行制限（`INV-03`）**、**デイライト視認性明暗ペア担保（PAT-UI-001）**、**MSWモックハンドラー構築（`INV-04`）** | パッケージ導入・UIビルドのみ許可（**Git/デプロイ/DB操作禁止: `INV-02`**） |
-| 🛡️ **QA Engineer** | サブ / `pro` | ドキュメント多次元整合性監査（`dev-doc-reviewer`）、3大レビュー（基本設計/コード品質/システム総合: `INV-07`）、**スルーテスト自動修復（Profile D実ファイルDB動的プロビジョニング PAT-TEST-001）**、障害RCA記録（`wiki-maintainer`）、**3段階意味的整合性監査（Semantic Auditor）** | テスト・静的解析・バジェット監査のみ許可（**アプリ本体コードおよび Immutable Core 直接改変禁止: `INV-02`/`INV-09`**） |
+| 🛡️ **QA Engineer** | サブ / `pro` | ドキュメント多次元整合性監査（`dev-doc-reviewer`）、3大レビュー（基本設計/コード品質/システム総合: `INV-07`）、スルーテスト自動修復、障害RCA記録（`wiki-maintainer`）、**3段階意味的整合性監査（Semantic Auditor / pattern_id一意性検証）** | テスト・静的解析・バジェット監査のみ許可（**アプリ本体コードおよび Immutable Core 直接改変禁止: `INV-02`/`INV-09`**） |
 
 ---
 
@@ -129,23 +129,36 @@ flowchart TD
 │   ├── skills/
 │   │   └── template-pipeline-sync/      # 🔄 テンプレート改訂専用 Global⇔Workspace 同期スキル
 │   └── plugins/
-│       └── system-dev-pipeline/         # 🔒 開発自動化プラグイン正本 (Immutable Core v2.4.0)
+│       └── system-dev-pipeline/         # 🔒 開発自動化プラグイン正本 (Immutable Core v2.5.0)
 │           ├── plugin.json              # プラグインマニフェスト（agents 5件, skills 19件）
-│           ├── PIPELINE_MANIFEST.json   # 📜 バージョン・公式吸収済みパターンID（6件）の機械可読正本
+│           ├── PIPELINE_MANIFEST.json   # 📜 バージョン・公式吸収済みパターンID（13件）の機械可読正本
 │           ├── FEEDBACK_LEDGER.md       # 📖 人間監査用の知見適合履歴・系譜台帳
 │           ├── scripts/
-│           │   └── pipeline-reconciler.sh # ⚙️ Knowledge Hub管理・Overlay再生成・Upgrade Reconciler
+│           │   ├── pipeline-reconciler.sh # ⚙️ 軽量シェルディスパッチャ (43行)
+│           │   └── reconciler_core.py     # ⚙️ Hub管理・Overlay再生成・Upgrade Reconciler コア (379行)
 │           ├── agents/                  # 👥 エージェント定義（conductor, architect, backend, ui, qa）
 │           ├── rules/                   # 📜 開発プロセス標準規約 (AGENTS.md) & コア不変原則 (CORE_INVARIANTS.md)
 │           ├── skeletons/               # 🧱 プロファイル別初期コードスケルトン (common, profile-a, profile-d)
+│           │   ├── profile-a/docker/entrypoint.sh # litestream run スーパーバイザー起動
+│           │   └── profile-d/backend/tests/conftest.py # temp_db 一時実ファイル動的プロビジョニング
 │           ├── skills/                  # ⚙️ カスタムスキル群（全19種）
-│           └── templates/               # 📄 V2.4 標準ドキュメント・設定ファイル雛形
+│           │   └── dev-metrics-collector/scripts/ # 📊 4モジュール分割された定量測定エンジン
+│           │       ├── metrics_collector.py (CLI)
+│           │       ├── metrics_types.py     (型スキーマ)
+│           │       ├── parsers.py           (パーサー)
+│           │       ├── scoring.py           (スコアリング)
+│           │       └── reporters.py         (レポーター)
+│           └── templates/               # 📄 V2.5 標準ドキュメント・設定ファイル雛形
 ├── docs/                                # 仕様書・設計書・レポート
 │   ├── 設計書/
-│   │   ├── Current/                     # ★現在の正本（Single Source of Truth: V2.4 正本設計書 全9文書）
-│   │   └── V1.0/ V2.0/ V2.1/ V2.2/ V2.3/# 過去バージョン設計書アーカイブ
-│   ├── 検討課題/                        # バージョン別検討課題・評価レポート群
+│   │   ├── Current/                     # ★現在の正本（Single Source of Truth: V2.5 正本設計書 全10文書）
+│   │   └── v2.4/ v2.3/ v2.2/ v2.1/ v2.0/# 過去バージョン設計書アーカイブ
+│   ├── 検討課題/                        # バージョン別検討課題・評価レポート群 (v2.5配下に総点検報告書)
 │   └── reports/                         # 各種調査・監査報告書
+├── metrics/                             # 📊 定量測定成果物集約ディレクトリ (PAT-SYS-003)
+│   ├── system_health_report.md          # 総合健全性診断レポート
+│   ├── development_phase_report.md      # フェーズ・改訂推移レポート (PAT-SYS-004)
+│   └── development-metrics-summary.json # 定量サマリJSON
 ├── rules/
 │   └── AGENTS.md                        # ワークスペース共通ルール + 第11節(パイプライン改訂同期規約)
 └── README.md
@@ -169,24 +182,24 @@ flowchart TD
 
 ## 🛠 全19スキル（Skills）一覧
 
-| フェーズ / 用途 | スキル名 | 主担当 | 概要・実行内容 (V2.4仕様) |
+| フェーズ / 用途 | スキル名 | 主担当 | 概要・実行内容 (V2.5仕様) |
 | :--- | :--- | :--- | :--- |
 | **PHASE 1** | `dev-phase1-setup` | 👑 Conductor | **Knowledge Hub 検知**、ディレクトリ構造展開、静的スケルトン基盤（`skeletons/`）配置、`.env`、`PROJECT_STATE.md`（SemVer 3桁 `v1.0.0`）。 |
 | **PHASE 2** | `dev-phase2-requirements` | 📐 Architect | `docs/要件定義書.md` 精査、**2層プロファイル体系（Profile A〜E）選定**、定常コア8項目の非機能要件自動バインド。 |
 | **PHASE 3** | `dev-phase3-design` | 📐 Architect<br>└ 🎨 UI | **Shift-Left基本設計4書**（技術/スキーマ/ロジック/画面仕様）策定。グランドデザイン新規格準拠、Alembic前提、二重キャッシュ、デイライト視認性。 |
 | **PHASE 3 ゲート** | `dev-review-arch` | 🛡️ QA | **基本設計レビュー**。定常コア8項目および展開プロファイル別適合アーキテクチャ監査（`PASS` 必須）。 |
-| **PHASE 4** | `dev-phase4-env-build` | 👑 Conductor<br>├ 💻 BE<br>└ 🎨 UI | 静的スケルトンを土台にDocker環境構築、💻 BE ＋ 🎨 UI 並行実装、**DTO・パーサー物理分離 (PAT-CODE-001)**、**標準コマンドシーケンス**自動実行、Git初期化。 |
+| **PHASE 4** | `dev-phase4-env-build` | 👑 Conductor<br>├ 💻 BE<br>└ 🎨 UI | 静的スケルトンを土台にDocker環境構築、💻 BE ＋ 🎨 UI 並行実装、**DTO・パーサー物理分離**、**標準コマンドシーケンス**自動実行、Git初期化。 |
 | **PHASE 4** | `dev-git-init` | ⚙️ Conductor | `Git運用基準書.md` 配置、`.gitignore` 設定、Git初期化（`main`）、`feature` ブランチ作成。 |
-| **PHASE 5** | `dev-phase5-walkthrough` | 👑 Conductor<br>└ 📐 Architect | 画面ウォークスルー動作確認統括、**モック透過切替検証 (Fail-Fast原則 / PAT-MOCK-001)**、不具合修正、最新コードを正としたAPI仕様書同期。 |
+| **PHASE 5** | `dev-phase5-walkthrough` | 👑 Conductor<br>└ 📐 Architect | 画面ウォークスルー動作確認統括、**モック透過切替検証 (Fail-Fast原則)**、不具合修正、最新コードを正としたAPI仕様書同期。 |
 | **PHASE 5.5 ゲート**| `dev-review-code` | 🛡️ QA | **コード品質・整合性レビュー**。**250行/400行制限検査**、**直書きモック排除**、**DTO・パーサー分離検査**、**デイライト視認性検査**、型同期（`CLEAN` 必須）。 |
-| **PHASE 6** | `dev-phase6-testing` | 🛡️ QA | シナリオテスト計画書作成、自動テストコード構築、**Profile D一時実ファイルDB動的プロビジョニング (PAT-TEST-001)**、自動修復ループ（最大5回）。 |
+| **PHASE 6** | `dev-phase6-testing` | 🛡️ QA | シナリオテスト計画書作成、自動テストコード構築、**Profile D一時実ファイルDB動的プロビジョニング (PAT-TEST-001/temp_db)**、自動修復ループ（最大5回）。 |
 | **PHASE 6 / RCA** | `wiki-maintainer` | 🛡️ QA | **障害時RCA即時記録**。テスト失敗・手戻り発生時に根本原因を分析し `./wiki/patterns/` へ即時記録。 |
-| **PHASE 7 ゲート** | `dev-review-system` | 🛡️ QA | **システム総合レビュー**。**本番モックOFF二重防御 & Fail-Fast 監査**、**IAP JWT署名検証有効化**、**起動時 Alembic 保証**、平文排除（`RELEASE APPROVED` 必須）。 |
+| **PHASE 7 ゲート** | `dev-review-system` | 🛡️ QA | **システム総合レビュー**。**本番モックOFF二重防御 & Fail-Fast 監査**、**IAP JWT署名検証有効化**、**Profile A litestream run スーパーバイザー起動保証**、平文排除（`RELEASE APPROVED` 必須）。 |
 | **PHASE 7** | `dev-phase7-release` | 👑 Conductor | システム総合レビュー合格確認、本番適用作業手順書作成、**非対話CLIガードレール（`--quiet` 強制・`schedule` タイマー監視）** による安全デプロイ。 |
 | **PHASE 8** | `dev-phase8-rules` | 👑 Conductor<br>└ 🛡️ QA | メトリクス集計、原票クラスタリング、**知見原票投函 ➔ 3段階意味的監査 ➔ `ask_question` 承認 ➔ Local Overlay 再生成**、Git本番リリース。 |
-| **PHASE 8 / 起案** | `wiki-proposer` | 👑 Conductor | **標準化知見原票起案・投函**。Tier 2 知見から `CLAIM-*.md` を生成して `inbox/` へ投函。 |
+| **PHASE 8 / 起案** | `wiki-proposer` | 👑 Conductor | **標準化知見原票起案・投函**。Tier 2 知見から `CLAIM-*.md` を生成して `inbox/` へ投函。**Hub全域走査による未使用連番一意採番 (PAT-SYS-006)**。 |
 | **PHASE 8 / 整理** | `wiki-compactor` | 👑 Conductor | **Wiki整理・原票クラスタリング・Overlay圧縮**。Hub `inbox/` 原票集約および `LOCAL_FEEDBACK_RULES.md` 圧縮。 |
-| **定量測定** | `dev-metrics-collector` | 👑 Conductor | **定量メトリクス集計**。ターン別メトリクスおよびバジェット遵守度を集計し、総合健全性診断レポートを出力。 |
+| **定量測定** | `dev-metrics-collector` | 👑 Conductor | **定量メトリクス集計 (4モジュール構成)**。**metrics/ パス集約 (PAT-SYS-003)**、**PROJECT_STATE 即時同期 (PAT-SYS-002)**、**フェーズ推移レポート生成 (PAT-SYS-004)**。 |
 | **PHASE 8 / リリース** | `dev-git-release` | ⚙️ Conductor | **先頭サニタイズ処理**、Gitタグ付与（`vMAJOR.MINOR.PATCH`）、`main` への Squash Merge、Push、次期 `feature` 切り直し。 |
 | **保守** | `dev-db-overwrite` | ⚙️ Conductor | 本番適用後DBのローカル同期、DBを含むコンテナの本番上書きデプロイ（二重防御ガードレール保護）。 |
 | **共通監査** | `dev-doc-reviewer` | 🛡️ QA | `docs/` 配下の要件定義・設計書間の矛盾、誤植、相対パスリンク切れを多次元クロスチェックし自動修復。 |
@@ -195,7 +208,7 @@ flowchart TD
 
 ## 🚦 開発パイプラインの実行フロー (PHASE 1〜8)
 
-開発の具体的な手順、ユーザーが行うべきアクション、およびAIの自律動作の詳細は、[AI駆動システム開発手順書V2.4.md](./docs/設計書/Current/AI駆動システム開発手順書V2.4.md) および [AI駆動システム開発フェーズ定義書V2.4.md](./docs/設計書/Current/AI駆動システム開発フェーズ定義書V2.4.md) を参照してください。
+開発の具体的な手順、ユーザーが行うべきアクション、およびAIの自律動作の詳細は、[AI駆動システム開発手順書V2.5.md](./docs/設計書/Current/AI駆動システム開発手順書V2.5.md) および [AI駆動システム開発フェーズ定義書V2.5.md](./docs/設計書/Current/AI駆動システム開発フェーズ定義書V2.5.md) を参照してください。
 
 ```mermaid
 flowchart TD
@@ -207,7 +220,8 @@ flowchart TD
     P5 -->|"★ ユーザー承認ゲート"| R5["PHASE 5.5 ゲート: コード品質レビュー<br/>dev-review-code (CLEAN)"]
     R5 --> P6["PHASE 6: スルーテスト環境構築 & 自動テスト<br/>dev-phase6-testing"]
     P6 -->|"★ ユーザー承認ゲート"| R7["PHASE 7 ゲート: システム総合レビュー<br/>dev-review-system (APPROVED)"]
-    R7 --> P7["PHASE 7: 本番リリース作業<br/>dev-phase7-release"]
+    P7["PHASE 7: 本番リリース作業<br/>dev-phase7-release"]
+    R7 -->|"★ ユーザー承認ゲート"| P7
     P7 -->|"★ ユーザー承認ゲート"| P8["PHASE 8: ルール化と自己進化<br/>dev-phase8-rules"]
     P8 -->|"★ ユーザー知見裁定ゲート"| ACTIVE["本番稼働 (PRODUCTION_ACTIVE)"]
 ```
@@ -235,19 +249,20 @@ flowchart TD
 
 ## 📚 正本設計ドキュメント一覧（`docs/設計書/Current/`）
 
-開発・適用の唯一の正（Single Source of Truth）として `docs/設計書/Current/` 配下で管理されている設計書群です。
+開発・適用の唯一の正（Single Source of Truth）として `docs/設計書/Current/` 配下で管理されている設計書群（全10文書）です。
 
-- [V2.4改変計画書.md](./docs/設計書/Current/V2.4改変計画書.md) - V2.4 正式改訂計画書
-- [V2.4セマンティックバージョニング仕様書.md](./docs/設計書/Current/V2.4セマンティックバージョニング仕様書.md) - バージョニング統一仕様書
-- [AI駆動システム開発フェーズ定義書V2.4.md](./docs/設計書/Current/AI駆動システム開発フェーズ定義書V2.4.md) - ライフサイクルフェーズ定義正本
-- [AI駆動システム開発手順書V2.4.md](./docs/設計書/Current/AI駆動システム開発手順書V2.4.md) - ユーザー＆AI協調開発実践手順書
-- [エージェント設計書V2.4.md](./docs/設計書/Current/エージェント設計書V2.4.md) - 5大エージェント協調モデル仕様書
-- [レビューシステム設計書V2.4.md](./docs/設計書/Current/レビューシステム設計書V2.4.md) - 3大レビュー＆3段階意味的監査仕様書
-- [状態管理機構設計書V2.4.md](./docs/設計書/Current/状態管理機構設計書V2.4.md) - PROJECT_STATE 状態遷移仕様書
-- [ProfileA詳細設計書.md](./docs/設計書/Current/ProfileA詳細設計書.md) - Profile A (Cloud Run + Litestream + SQLite) 設計仕様書
-- [ProfileD詳細設計書.md](./docs/設計書/Current/ProfileD詳細設計書.md) - Profile D (Tauri v2 + Desktop) 設計仕様書
+- [V2.5改変計画書.md](./docs/設計書/Current/V2.5改変計画書.md) - V2.5 正式改訂計画書
+- [セマンティックバージョニング仕様書.md](./docs/設計書/Current/セマンティックバージョニング仕様書.md) - バージョニング統一仕様書
+- [AI駆動システム開発フェーズ定義書V2.5.md](./docs/設計書/Current/AI駆動システム開発フェーズ定義書V2.5.md) - ライフサイクルフェーズ定義正本
+- [AI駆動システム開発手順書V2.5.md](./docs/設計書/Current/AI駆動システム開発手順書V2.5.md) - ユーザー＆AI協調開発実践手順書
+- [エージェント設計書V2.5.md](./docs/設計書/Current/エージェント設計書V2.5.md) - 5大エージェント協調モデル仕様書
+- [レビューシステム設計書V2.5.md](./docs/設計書/Current/レビューシステム設計書V2.5.md) - 3大レビュー＆3段階意味的監査仕様書
+- [状態管理機構設計書V2.5.md](./docs/設計書/Current/状態管理機構設計書V2.5.md) - PROJECT_STATE 状態遷移仕様書
+- [定量測定・フィードバック設計書V2.5.md](./docs/設計書/Current/定量測定・フィードバック設計書V2.5.md) - 定量測定エンジン・評価指標仕様書
+- [ProfileA詳細設計書.md](./docs/設計書/Current/ProfileA詳細設計書.md) - Profile A (Cloud Run + Litestream run + SQLite) 設計仕様書
+- [ProfileD詳細設計書.md](./docs/設計書/Current/ProfileD詳細設計書.md) - Profile D (Tauri v2 + Desktop + temp_db) 設計仕様書
 
-※過去バージョンの設計文書は `docs/設計書/V2.3/` 配下等にアーカイブ退避されています。
+※過去バージョンの設計文書は `docs/設計書/v2.4/`, `docs/設計書/V2.3/` 配下等にアーカイブ退避されています。
 
 ---
 

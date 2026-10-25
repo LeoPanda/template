@@ -9,3 +9,8 @@
 wiki/
 metrics/
 promotions/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo

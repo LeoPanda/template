@@ -3,11 +3,11 @@ name: dev-metrics-collector
 description: "開発プロセスにおける定量メトリクス（Token/時間/ツール/レビュー/テスト）を機械集計し、健全性スコアおよび診断レポートを出力するスキル。"
 ---
 
-# 定量測定・メトリクス集計 (dev-metrics-collector) スキル V2.4
+# 定量測定・メトリクス集計 (dev-metrics-collector) スキル V2.5
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **適用契機**: 各フェーズ完了時、改訂ターン完了時、PHASE 8 総合診断
-- **正本設計書**: [docs/設計書/Current/定量測定・フィードバック設計書V2.4.md](../../../../../docs/設計書/Current/定量測定・フィードバック設計書V2.4.md)
+- **正本設計書**: [docs/設計書/Current/定量測定・フィードバック設計書V2.5.md](../../../../../docs/設計書/Current/定量測定・フィードバック設計書V2.5.md)
 
 ---
 
@@ -48,17 +48,26 @@ python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py
 
 スクリプトにより、以下の成果物が自動生成されます：
 1. **プロジェクト統合サマリJSON**:
-   - `docs/plans/metrics/development-metrics-summary.json`
+   - `metrics/development-metrics-summary.json`
    - 12 指標および 4 大カテゴリスコアが格納された機械可読データ。
 2. **総合健全性診断レポートMarkdown**:
    - `metrics/system_health_report.md`
    - 総合グレード、トークン消費内訳、ツール呼出頻度、レビュー合否実績が整理された人間可読レポート。
+3. **フェーズ別・改訂別推移レポートMarkdown**:
+   - `metrics/development_phase_report.md`
+   - 新規開発フェーズ（PHASE 1〜8）および各改訂ターン別の所要時間、ターン数、エラー数推移とインサイト。
 
 コンダクターはレポートの内容を読み込み、総合スコアと特記事項（ボトルネックや改善候補）を確認します。
 
 ---
 
-### Step 3: PHASE 8 およびユーザーへの完了報告
+### Step 3: PROJECT_STATE.md 定量サマリの即時同期
+
+スクリプト実行完了後、コンダクターは `metrics/development-metrics-summary.json` から主要数値を読み取り、`PROJECT_STATE.md` の「プロジェクト定量メトリクスサマリ」テーブルおよびヘッダー更新日時を即時更新してください（Single Writer原則）。
+
+---
+
+### Step 4: PHASE 8 およびユーザーへの完了報告
 
 集計完了後、コンダクターは以下の標準フォーマットでユーザーに結果サマリを報告してください。
 

@@ -1,4 +1,4 @@
-# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.4)
+# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.5)
 
 本プロジェクトおよび開発パイプラインにおいては、以下の開発・運用規約に従うものとする。
 
@@ -18,13 +18,14 @@
 
 ---
 
-## 2. 5大エージェント協調モデルと責務分担 (V2.3)
+## 2. 5大エージェント協調モデルと責務分担 (V2.5)
 本システムは、以下の5大エージェントによる明確な関心事分離（Separation of Concerns）とオーケストレーション体制で自律推進される。
 
 1. 👑 **プロジェクトコンダクター (`conductor`) [Main Agent]**:
    - プロジェクト進行管理、ユーザー対話、進行フェーズ（PHASE 1〜8）の厳格管理。
    - **初期スケルトン（`skeletons/`）の展開統括**、`.env` モック環境変数設定、および PHASE 1 開始時の Central Knowledge Hub 未処理原票検知。
    - `PROJECT_STATE.md` の一元更新（**Single Writer 原則**）。
+   - **定量メトリクス即時同期**: `dev-metrics-collector` 実行後、生成された診断レポートの主要数値を `PROJECT_STATE.md` の「プロジェクト定量メトリクスサマリ」へ即時反映し、ヘッダー更新日時を更新する。
    - **標準コマンドシーケンスの統括実行**:
      - Alembicマイグレーション自動生成: `docker compose exec backend alembic revision --autogenerate -m "..."`
      - Alembicマイグレーション適用: `docker compose exec backend alembic upgrade head`
@@ -32,7 +33,7 @@
      - コミット前CI同等ローカル検証 (`ruff check`, `pytest`, `npm run lint`, `npm run type-check`)
    - 専任コマンド実行: Git操作（`dev-git-init`, `dev-git-release`）、本番デプロイ、DB強制上書き（`dev-db-overwrite`）、Dockerコンテナ全体の起動・停止。
    - サブエージェント動的登録フォールバック（未登録エージェントの `define_subagent` 実行）および `invoke_subagent` 呼び出し時の引数明示渡し（`default_model`, `default_workspace`）。
-   - PHASE 8 における知見・メトリクス統括（`wiki-proposer`, `wiki-compactor`, `dev-metrics-collector`, `pipeline-reconciler.sh`）。
+   - PHASE 8 における知見・メトリクス統括（`wiki-proposer`, `wiki-compactor`, `dev-metrics-collector`, `pipeline-reconciler.sh`）。起票時には Knowledge Hub 全域を走査して未使用最新連番を一意採番する。
 2. 📐 **設計・立案スペシャリスト (`architect`) [Subagent]**:
    - **2層プロファイル体系の設計義務化**: 要件定義（ディシジョンツリーによる Profile A〜D 選定）、4大基本設計書（技術・スキーマ・ロジック・画面）作成。
    - 外部API二重キャッシュ戦略（TTLメモリ＋DBキャッシュ）、モック制御仕様（案C＋案A）、Alembic前提スキーマ（生SQL禁止、Aware UTC、`user_id` 拡張性）の設計、およびウォークスルー後のバックエンドAPI仕様書同期。
@@ -52,10 +53,10 @@
    - **2層構造 3大レビューの厳格監査**:
      - 基本設計レビュー (`dev-review-arch`): 定常コア8項目 ＋ 展開プロファイル別適合監査。
      - コード品質レビュー (`dev-review-code`): **1ファイル最大250行制限の機械的検査**、**直書きモック検出・排除**、型同期検証。
-     - システム総合レビュー (`dev-review-system`): **本番モックOFF二重防御**、**IAP JWT署名検証有効化**、**Alembic起動時マイグレーション保証**、平文排除。
+     - システム総合レビュー (`dev-review-system`): **本番モックOFF二重防御**、**IAP JWT署名検証有効化**、Profile A の `litestream run` スーパーバイザー起動保証、平文排除。
    - ドキュメント多次元整合性監査（`dev-doc-reviewer`、最大5回ループ、除外パスの遵守）およびスルーテスト計画策定・自動実行ループ（最大5回ループ）。
    - **Wiki Maintainer 責務**: レビュー不合格・テスト失敗・自律修復時の根本原因分析 (RCA) とローカル `./wiki/` への即時記録。
-   - **Semantic Auditor 責務**: 標準化知見原票に対する3段階意味的整合性監査（新・複合検証ゲート4大関門）の実行。
+   - **Semantic Auditor 責務**: 標準化知見原票に対する3段階意味的整合性監査（新・複合検証ゲート4大関門、知見パターン識別子の一意性・衝突排除）の実行。
    - **【コード直接改変禁止】** システム本体のプログラムコードに不具合を発見した場合は勝手に修正せず、原因調査結果とUnified Diff案をコンダクターへ報告する。
 
 ---
@@ -79,7 +80,7 @@
 8. **画面グランドデザイン規範**: 4px/8pxグリッド、HEX/px絶対値併記。**デイライトモード視認性担保のため、セマンティックデザイントークン（CSS変数一元制御）または明暗ペア指定（例: `bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300`）を必須とし、ダーク前提の淡色・透過カラー単独直書きを禁止**。
 
 ### 4.2 第2層: システム展開プロファイル (Profile A〜E)
-- **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
+- **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream (スーパーバイザー起動 `litestream run`) + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
 - **Profile B (Web SSR / フルマネージドRDB型)**: Next.js/Nuxt SSR または FastAPI + Cloud SQL (PostgreSQL) + Alembic。
 - **Profile C (静的MPA / 超軽量ツール型)**: FastAPI + Jinja2 + HTMX / 単一バイナリCLI。
 - **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + IStorageAdapter + **結合テスト時の一時実ファイルDB動的プロビジョニング（UUID付与・WAL並行性/マイグレーション整合性検査・アトミック破棄）**。
@@ -91,11 +92,11 @@
 以下の3大レビューゲートにおいて合否判定を満たさない限り、次のフェーズへ進行してはならない。
 1. **基本設計レビュー (`dev-review-arch`) [PHASE 3 完了ゲート]**: 判定 `PASS` または `CONDITIONAL PASS` 必須（`REJECT` 時は設計修正ループへ差し戻し）。
 2. **コード品質レビュー (`dev-review-code`) [PHASE 5.5 完了ゲート]**: 判定 `CLEAN` 必須（250行制限検査、直書きモック完全排除、型同期検証、DRY、SRP）。
-3. **システム総合レビュー (`dev-review-system`) [PHASE 7 リリース直前ゲート]**: 判定 `RELEASE APPROVED` 必須（本番用 `VITE_ENABLE_MOCK=false` 二重防御、IAP JWT署名検証有効化、`entrypoint.sh` による起動時 Alembic 自動実行保証、Litestream同期監視、平文シークレット完全排除、非root実行、ロールバック計画の完全性）。
+3. **システム総合レビュー (`dev-review-system`) [PHASE 7 リリース直前ゲート]**: 判定 `RELEASE APPROVED` 必須（本番用 `VITE_ENABLE_MOCK=false` 二重防御、IAP JWT署名検証有効化、Profile A の `litestream run` スーパーバイザー起動保証、Alembic起動時マイグレーション保証、平文シークレット完全排除、非root実行、ロールバック計画の完全性）。
 
 ---
 
-## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.3)
+## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.5)
 1. **試行錯誤・RCAのローカル固定蓄積とパス互換性**:
    - 開発中に発生したエラー・失敗・手戻りのRCAは、**必ずカレントプロジェクト配下の `./wiki/`（PKM Vault等では `./.gemini/wiki/`）** に蓄積する。グローバル領域への直接書き込みは厳格に禁止する。
 2. **二層分離 (Two-Tier Separation) と二段階進化**:

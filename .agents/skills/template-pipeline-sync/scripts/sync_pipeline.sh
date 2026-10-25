@@ -96,7 +96,13 @@ compute_tree_hash() {
     echo "NONE"
     return 0
   fi
-  (cd "$dir" && find . -type f ! -name ".DS_Store" ! -name "*.orig" ! -name "*.rej" | sort | xargs shasum -a 256 2>/dev/null | shasum -a 256 | awk '{print $1}')
+  local hash_cmd
+  if command -v sha256sum >/dev/null 2>&1; then
+    hash_cmd="sha256sum"
+  else
+    hash_cmd="shasum -a 256"
+  fi
+  (cd "$dir" && find . -type f ! -name ".DS_Store" ! -name "*.orig" ! -name "*.rej" ! -name "*.pyc" ! -path "*/__pycache__*" | sort | xargs $hash_cmd 2>/dev/null | $hash_cmd | awk '{print $1}')
 }
 
 update_sync_stamp() {
@@ -163,7 +169,14 @@ def list_rel_files(root: pathlib.Path):
     if not root.exists():
         return res
     for p in root.rglob("*"):
-        if p.is_file() and p.name != ".DS_Store" and not p.name.endswith(".orig") and not p.name.endswith(".rej"):
+        if (
+            p.is_file()
+            and p.name != ".DS_Store"
+            and not p.name.endswith(".orig")
+            and not p.name.endswith(".rej")
+            and not p.name.endswith(".pyc")
+            and "__pycache__" not in p.parts
+        ):
             res.add(str(p.relative_to(root)))
     return res
 

@@ -6,7 +6,7 @@ echo "=== [Profile A] Starting Cloud Run Container ==="
 DB_PATH="/data/app.db"
 export DATABASE_URL="sqlite:///${DB_PATH}"
 
-# 1. Litestream リストア処理
+# 1. Litestream リストア処理 (初回起動またはコンテナ再起動時のフェイルセーフ)
 if [ -n "$LITESTREAM_BUCKET" ]; then
     echo "--> Checking for existing Litestream replica in GCS..."
     if litestream restore -if-replica-exists -config /etc/litestream.yml "${DB_PATH}"; then
@@ -30,12 +30,11 @@ else
 fi
 cd /app
 
-# 3. Litestream レプリケーション並行起動 & Uvicorn 起動
+# 3. Litestream スーパーバイザー起動 (SIGTERM シグナル伝播と最終 WAL フラッシュ同期保証)
 if [ -n "$LITESTREAM_BUCKET" ]; then
-    echo "--> Starting Litestream replication in background..."
-    litestream replicate -config /etc/litestream.yml &
-    LITESTREAM_PID=$!
+    echo "--> Starting Uvicorn under Litestream supervisor on port ${PORT:-8080}..."
+    exec litestream run -config /etc/litestream.yml -- uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
+else
+    echo "--> Starting Uvicorn server standalone on port ${PORT:-8080}..."
+    exec uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
 fi
-
-echo "--> Starting Uvicorn server on port ${PORT:-8080}..."
-exec uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"

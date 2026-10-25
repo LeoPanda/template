@@ -22,7 +22,7 @@ description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md)
 ## 作業手順
 
 ### 1. 定量メトリクス集計と総合健全性診断 (`dev-metrics-collector`)
-- 以下のコマンドを実行して定量メトリクスを機械集計し、`docs/plans/metrics/development-metrics-summary.json` および `metrics/system_health_report.md` を生成してプロジェクト総合グレード (Grade S〜Critical) を報告します：
+- 以下のコマンドを実行して定量メトリクスを機械集計し、`metrics/development-metrics-summary.json` および `metrics/system_health_report.md` を生成してプロジェクト総合グレード (Grade S〜Critical) を報告します：
   ```bash
   PLUGIN_DIR="$([ -d "./.agents/plugins/system-dev-pipeline" ] && echo "./.agents/plugins/system-dev-pipeline" || echo "${HOME}/.gemini/config/plugins/system-dev-pipeline")"
   python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py"
