@@ -38,7 +38,7 @@ description: "PHASE 2 要件定義書を作成・精査・清書するための�
 4. **レビューと未決事項（Open Questions）の抽出**:
    - 曖昧な仕様やユーザー確認が必要な事項がある場合は、標準完了サマリの「残課題 / Open Questions」に明記してください。
 5. **標準完了サマリの返却 (Single Writer原則)**:
-   - 作業完了後、コンダクターに対して完了サマリを返送してください。コンダクターが `PROJECT_STATE.md` を更新し、ユーザー承認ゲートを提示します。
+   - 作業完了後、コンダクターに対して完了サマリを返送してください。コンダクターが `python3 scripts/state_manager.py complete-task --id P2-T01` を実行してタスクを完了し、ユーザー承認ゲートを提示します。承認後は `python3 scripts/state_manager.py record-approval --phase PHASE_2` および `python3 scripts/state_manager.py set-phase PHASE_3_DESIGN` を実行します。
 
 ---
 

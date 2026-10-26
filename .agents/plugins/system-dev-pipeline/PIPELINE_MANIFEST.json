@@ -1,7 +1,7 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.5.0",
-  "released_at": "2026-10-25T12:00:00+09:00",
+  "version": "2.6.0",
+  "released_at": "2026-10-26T14:00:00+09:00",
   "invariants_version": "1.0.0",
   "absorbed_patterns": [
     {

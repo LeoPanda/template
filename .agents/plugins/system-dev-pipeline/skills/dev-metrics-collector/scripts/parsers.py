@@ -325,6 +325,19 @@ def parse_workspace_artifacts(workspace_root: Path, retroactive_mode: bool = Fal
                 (metrics.reviews_passed / metrics.reviews_total) * 100, 1
             )
 
+    # 2.5 project_state.json レビュー結果直接補完 (V2.6)
+    state_json = workspace_root / "project_state.json"
+    if state_json.is_file():
+        try:
+            sdata = json.loads(state_json.read_text(encoding="utf-8"))
+            for rk, rv in sdata.get("review_gates", {}).items():
+                if isinstance(rv, dict) and rv.get("verdict") and rv["verdict"] != "PENDING":
+                    if rv["verdict"] in ("PASS", "RELEASE APPROVED", "CLEAN", "CONDITIONAL PASS"):
+                        metrics.reviews_passed = max(metrics.reviews_passed, 1)
+                    for sev in ("Critical", "High", "Medium", "Low"):
+                        metrics.defects_by_severity[sev] += rv.get(sev.lower(), 0)
+        except Exception:
+            pass
     # 3. Git 履歴解析
     try:
         res_commits = subprocess.run(

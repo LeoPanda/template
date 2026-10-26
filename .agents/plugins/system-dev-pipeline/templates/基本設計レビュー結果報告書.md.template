@@ -1,22 +1,27 @@
-# 基本設計レビュー結果報告書 (V2.4)
+# 基本設計レビュー結果報告書 (V2.6)
 
 - **レビュー実施日**: {{REVIEW_DATE}}
-- **実施ロール**: 🏛️ システムアーキテクチャ監査役 (qa-engineer)
+- **実施ロール**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (qa-engineer)
 - **対象プロファイル**: {{DEPLOYMENT_PROFILE}} <!-- [Profile A: サーバーレス極小コストWeb型 / Profile B / Profile C / Profile D] -->
 - **対象ドキュメント**: 要件定義書、技術要件定義書、テーブルスキーマ定義書、ビジネスロジック仕様書、画面仕様書
+- **要件トレーサビリティ機械検証 (RTM)**: {{RTM_RESULT}} <!-- [scripts/traceability_checker.py --mode design: PASS / BLOCKED] -->
 - **総合判定**: {{OVERALL_STATUS}} <!-- [PASS / CONDITIONAL PASS / REJECT] -->
 
 ## 1. 総合評価サマリ
 {{SUMMARY_EVALUATION}}
-<!-- 定常コア8項目（フロント責務分離・250行制限、型同期、Pydantic Settings、Aware UTC、自動CI、モック制御、画面グランドデザイン、外部API二重キャッシュ）および選択プロファイル適合性に関する総評 -->
+<!-- 定常コア8項目（Anti-God 250行制限、型同期、Pydantic Settings、Aware UTC、自動CI、モック制御、画面グランドデザイン、外部API二重キャッシュ）および選択プロファイル適合性に関する総評 -->
 
-## 2. 指摘事項一覧
+## 2. 要件トレーサビリティ検証結果
+- **総要件数**: {{TOTAL_REQS}} 件 (`[REQ-Fxx]`, `[REQ-NFxx]`)
+- **設計反映率**: {{COVERAGE_PERCENT}}% (未反映: {{UNCOVERED_COUNT}} 件)
+
+## 3. 指摘事項一覧
 | ID | 観点分類 (定常コア/プロファイル) | 重大度 | 対象設計書 / 項目 | 指摘内容・潜在リスク | 推奨対策・改善案 |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| ARCH-001 | 定常コア (DB運用) | CRITICAL | スキーマ | 手動ALTER TABLE前提となっておりAlembic未定義 | Alembicマイグレーション環境の初期統合を義務化 |
+| ARCH-001 | 定常コア (DB運用) | CRITICAL | スキーマ | 生SQL DDL前提となっておりAlembic未定義 | Alembicマイグレーション環境の初期統合を義務化 |
 | ARCH-002 | 定常コア (モック制御) | CRITICAL | 技術要件 | コンポーネント内直書きモックが許容されている | .envのVITE_ENABLE_MOCK制御およびMSW利用へ是正 |
 | ARCH-003 | Profile A (可用性) | MAJOR | 技術要件 | Cloud Runのmax-instances制約未明記 | max-instances=1 を明記し単一ライター保護を徹底 |
 
-## 3. 次のアクション
+## 4. 次のアクション
 - [ ] 📐 architect / 🎨 ui-designer による指摘事項の修正反映
-- [ ] 👑 コンダクターによる整合性再確認
+- [ ] 👑 コンダクターによる整合性再確認および `state_manager.py record-review --type arch` の記録

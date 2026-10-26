@@ -34,7 +34,7 @@ description: "PHASE 3 基本設計書の自動作成および基本設計レビ�
 1. 基本設計書および画面仕様書の作成完了後、コンダクターは 🛡️ `qa-engineer` に `dev-review-arch` を委譲します。
 2. 🛡️ `qa-engineer` は二層構造（定常コア8項目 ＋ プロファイル適合監査）で監査し、`docs/plans/基本設計レビュー結果報告書.md` を作成します。
 3. **判定結果に応じたフロー**:
-   - **`PASS` / `CONDITIONAL PASS`**: ユーザー承認を経て PHASE 4 へ進む。
+   - **`PASS` / `CONDITIONAL PASS`**: コンダクターは `python3 scripts/state_manager.py record-review --type arch --verdict PASS` を記録し、ユーザー承認を得て `python3 scripts/state_manager.py record-approval --phase PHASE_3` および `set-phase PHASE_4_IMPLEMENTATION` を実行して PHASE 4 へ進む。
    - **`REJECT`**: 📐 `architect` / 🎨 `ui-designer` へ是正が差し戻されます。指摘事項（250行制限未明記、生SQL残存、キャッシュ欠落、プロファイル不整合等）を修正し、再レビューを受けます。
 
 ---

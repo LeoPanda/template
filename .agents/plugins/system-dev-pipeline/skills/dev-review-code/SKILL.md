@@ -12,7 +12,16 @@ description: "PHASE 5.5 において実装コード全域の品質、整合性�
 
 ---
 
-## 1. 入力成果物
+## 1. 事前静的ガード検証 (Hard Gate Execution)
+レビュー開始前に、静的ガードエンジンを全域実行して機械的規約違反（250/400行制限、直書きモック、生SQL、AST例外握りつぶし等）を即時検出します：
+```bash
+python3 scripts/harness_guard.py --all
+```
+※違反（`BLOCK`）が存在する場合はレビューを即時中断し、直ちに是正を指示してください。
+
+---
+
+## 2. 入力成果物
 監査対象として以下のコード・設定群を走査します：
 - `src/` 配下のフロントエンドおよびバックエンド全実装コード
 - `Dockerfile`, `docker-compose.yml`, 各種設定ファイル (`tsconfig.json`, `package.json`, `pyproject.toml` 等)

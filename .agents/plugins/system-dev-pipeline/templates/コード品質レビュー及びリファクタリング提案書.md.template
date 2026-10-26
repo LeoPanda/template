@@ -1,17 +1,22 @@
-# コード品質レビュー及びリファクタリング提案書 (V2.4)
+# コード品質レビュー及びリファクタリング提案書 (V2.6)
 
 - **レビュー実施日**: {{REVIEW_DATE}}
-- **実施ロール**: 🧹 コード品質・リファクタリング監査役 (qa-engineer)
+- **実施ロール**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (qa-engineer)
 - **対象ソース**: フロントエンド / バックエンド全域
+- **Hard Gate 静的検証 (harness_guard.py)**: {{HARNESS_GUARD_RESULT}} <!-- [PASS / BLOCKED] -->
+- **ブラウザ感覚センサー検証 (Chrome DevTools MCP)**: {{DEVTOOLS_SENSOR_RESULT}} <!-- [PASS (Console Error 0, A11y PASS) / PENDING] -->
 - **総合判定**: {{OVERALL_STATUS}} <!-- [CLEAN / REFACTOR RECOMMENDED / BLOCKED] -->
 
-## 1. 静的解析・健全性メトリクス
+## 1. 静的解析・健全性メトリクス (Hard Gate HG-001〜007)
 - 最大フロントエンドコンポーネント行数: {{MAX_COMPONENT_LINES}} 行 (`{{MAX_COMPONENT_PATH}}`) [許容: 250行以内]
 - 最大バックエンドモジュール行数: {{MAX_BACKEND_MODULE_LINES}} 行 (`{{MAX_BACKEND_MODULE_PATH}}`) [許容: 400行以内 / DTO・パーサー物理分離]
-- コンポーネント内直書きモック残存数: {{INLINE_MOCK_COUNT}} 件 [許容: 0件]
-- UIデイライト視認性違反（ダーク前提淡色単独直書き）: {{DAYLIGHT_CONTRAST_VIOLATIONS}} 件 [許容: 0件 / 明暗ペア指定必須]
-- 手動型定義残存数: {{MANUAL_TYPE_COUNT}} 件 [許容: 0件]
-- デッドコード・一時的デバッグログ残存数: {{DEAD_CODE_COUNT}} 件 [許容: 0件]
+- 直書きモック残存数 (HG-002): {{INLINE_MOCK_COUNT}} 件 [許容: 0件 / MSWハンドラー集約]
+- サイレントモックフォールバック残存数: {{SILENT_MOCK_COUNT}} 件 [許容: 0件]
+- 生SQL DDL残存数 (HG-004): {{RAW_DDL_COUNT}} 件 [許容: 0件 / Alembicマイグレーション必須]
+- AST適応度違反 (HG-005: レイヤーバイパス/例外握りつぶし/DTO過多): {{AST_VIOLATIONS_COUNT}} 件 [許容: 0件]
+- UIデイライト視認性違反 (HG-006: 明暗ペア指定必須): {{DAYLIGHT_CONTRAST_VIOLATIONS}} 件 [許容: 0件]
+- 平文シークレット/未置換プレースホルダー (HG-007): {{SECRET_VIOLATIONS_COUNT}} 件 [許容: 0件]
+- 手動型定義残存数: {{MANUAL_TYPE_COUNT}} 件 [許容: 0件 / OpenAPI Codegen同期]
 - 重複コードブロック検出数: {{DUPLICATE_CODE_COUNT}} 件
 
 ## 2. リファクタリング提案とDiff
@@ -25,4 +30,5 @@
 
 ## 3. 適用判断
 - [ ] 👑 コンダクターによるDiff適用確認
-- [ ] 実行環境/コンテナ再構成 及び 疎通テスト
+- [ ] `docker compose down` ＆ `docker compose up --build -d` によるコンテナ再構成
+- [ ] `scripts/state_manager.py record-review --type code --verdict CLEAN` の記録

@@ -44,11 +44,18 @@ description: "PHASE 6 スルーテスト環境の構築と自動テスト実行�
 - **反復上限**:
   修復ループの反復は **最大5回まで** とし、5回を超えてもテストが成功しない場合は処理を中断し、状況を報告してください。
 
+### 3.5 要件トレーサビリティ検証 (RTM Check & Adversarial Ratio)
+テスト実行完了後、要件定義書（`REQ-Fxx` / `REQ-NFxx`）とテストコードの紐付けおよび異常系テスト比率（20%以上）を機械検証します：
+```bash
+python3 scripts/traceability_checker.py --mode full
+```
+※未検証要件（Orphan Req）または異常系比率不足が検出された場合は `exit 1` となり、テスト完了とは認められません。
+
 ### 4. 最終ドキュメント整合性レビュー (`dev-doc-reviewer`)
 - テスト完了後、`dev-doc-reviewer` を実行し、修正コードとドキュメント間の整合性を最終確認・補正してください。
 
 ### 5. 標準完了サマリの返却
-- テスト結果サマリをコンダクターへ返送してください。コンダクターはこれを受領して `PROJECT_STATE.md` を更新し、ユーザーへ承認ゲート確認を求めます。
+- テスト結果サマリをコンダクターへ返送してください。コンダクターはこれを受領して `python3 scripts/state_manager.py complete-task --id P6-T01` を実行してタスクを完了し、ユーザーへ承認ゲート確認を求めます。承認後は `python3 scripts/state_manager.py record-approval --phase PHASE_6` および `python3 scripts/state_manager.py set-phase PHASE_7_RELEASE` を実行します。
 
 ---
 

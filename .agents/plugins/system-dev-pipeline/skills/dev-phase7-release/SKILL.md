@@ -35,7 +35,7 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
 
 ### 3. ユーザーによる本番適用手順書の確認（承認ゲート）
 - 本番適用手順書およびシステム総合レビュー結果報告書をユーザーに提示し、最終確認・明示的承認を得てください。
-- 承認後、コンダクターが `PROJECT_STATE.md` を更新してデプロイを実行します。
+- 判定合格時、コンダクターは `python3 scripts/state_manager.py record-review --type system --verdict "RELEASE APPROVED"` を記録し、ユーザー承認後に `python3 scripts/state_manager.py record-approval --phase PHASE_7` を実行してデプロイへ進みます。
 
 ### 4. 本番リリースの実行（コンダクター専任）
 - `docs/plans/本番適用作業手順書.md` に従って、コンダクターが責任を持って本番環境へのビルド・デプロイを実行します（サブエージェントへのデプロイ委譲は禁止）。
@@ -54,4 +54,4 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
 - 本番公開URLでの画面疎通テストおよび主要機能の動作検証を実施してください。
 
 ### 6. 状態更新と報告
-- 本番URL、リビジョンID、Litestream同期状態、セキュリティ監査結果を `PROJECT_STATE.md` に記録し、ユーザーへ本番稼働確認の承認を要請してください。
+- 本番URL、リビジョンID、Litestream同期状態、セキュリティ監査結果を確認し、`python3 scripts/state_manager.py set-phase PHASE_8_EVOLUTION` を実行してユーザーへ本番稼働確認の承認を要請してください。

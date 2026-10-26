@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProjectStateLedger",
+  "description": "V2.6 AI Harness Hybrid State Ledger Schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_metadata",
+    "current_status",
+    "phases",
+    "review_gates",
+    "metrics_summary",
+    "revisions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["2.6.0"]
+    },
+    "project_metadata": {
+      "type": "object",
+      "required": ["project_name", "app_version", "deployment_profile", "mock_mode", "execution_mode", "template_source", "current_branch", "updated_at", "updated_by"],
+      "properties": {
+        "project_name": {"type": "string"},
+        "app_version": {"type": "string"},
+        "deployment_profile": {"type": "string"},
+        "mock_mode": {"type": "string", "enum": ["ENABLED", "DISABLED"]},
+        "execution_mode": {"type": "string", "enum": ["GLOBAL_PLUGIN", "LOCAL_STANDALONE"]},
+        "template_source": {"type": "string"},
+        "knowledge_hub_status": {"type": "string"},
+        "current_branch": {"type": "string"},
+        "updated_at": {"type": "string"},
+        "updated_by": {"type": "string"},
+        "md_checksum": {"type": "string"}
+      }
+    },
+    "current_status": {
+      "type": "string"
+    },
+    "phases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"]},
+          "completed_at": {"type": ["string", "null"]},
+          "approval_gate": {
+            "type": "object",
+            "properties": {
+              "required": {"type": "boolean"},
+              "approved": {"type": "boolean"},
+              "approved_at": {"type": ["string", "null"]},
+              "approver": {"type": "string"}
+            }
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "title", "done"],
+              "properties": {
+                "id": {"type": "string"},
+                "title": {"type": "string"},
+                "done": {"type": "boolean"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "review_gates": {
+      "type": "object",
+      "properties": {
+        "arch_review": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "critical": {"type": "integer"},
+            "high": {"type": "integer"},
+            "medium": {"type": "integer"},
+            "low": {"type": "integer"},
+            "report_path": {"type": "string"},
+            "updated_at": {"type": ["string", "null"]}
+          }
+        },
+        "code_review": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "critical": {"type": "integer"},
+            "high": {"type": "integer"},
+            "medium": {"type": "integer"},
+            "low": {"type": "integer"},
+            "report_path": {"type": "string"},
+            "updated_at": {"type": ["string", "null"]}
+          }
+        },
+        "system_review": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "critical": {"type": "integer"},
+            "high": {"type": "integer"},
+            "medium": {"type": "integer"},
+            "low": {"type": "integer"},
+            "report_path": {"type": "string"},
+            "updated_at": {"type": ["string", "null"]}
+          }
+        }
+      }
+    },
+    "metrics_summary": {
+      "type": "object",
+      "properties": {
+        "total_score": {"type": "number"},
+        "grade": {"type": "string"},
+        "category_scores": {
+          "type": "object",
+          "properties": {
+            "resource": {"type": "number"},
+            "quality": {"type": "number"},
+            "evolution": {"type": "number"},
+            "governance": {"type": "number"}
+          }
+        },
+        "total_tokens": {"type": "integer"},
+        "total_tool_calls": {"type": "integer"},
+        "net_loc": {"type": "integer"},
+        "last_collected_at": {"type": ["string", "null"]}
+      }
+    },
+    "revisions": {
+      "type": "object",
+      "required": ["current_revision_status", "active_revision_id", "history"],
+      "properties": {
+        "current_revision_status": {"type": "string", "enum": ["IDLE", "ACTIVE"]},
+        "active_revision_id": {"type": ["string", "null"]},
+        "current_turn": {"type": ["integer", "null"]},
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "status", "started_at"],
+            "properties": {
+              "id": {"type": "string"},
+              "title": {"type": "string"},
+              "status": {"type": "string"},
+              "started_at": {"type": "string"},
+              "completed_at": {"type": ["string", "null"]},
+              "branch": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "date": {"type": "string"},
+          "summary": {"type": "string"}
+        }
+      }
+    },
+    "infrastructure": {
+      "type": "object",
+      "properties": {
+        "git_commit": {"type": "string"},
+        "remote_url": {"type": "string"},
+        "container_status": {"type": "string"},
+        "last_build_at": {"type": ["string", "null"]},
+        "production_url": {"type": "string"}
+      }
+    }
+  }
+}

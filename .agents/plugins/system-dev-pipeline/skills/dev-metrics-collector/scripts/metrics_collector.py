@@ -55,6 +55,11 @@ def main() -> None:
         help="総合診断レポート・フェーズ推移レポート・JSONの全成果物を一括出力する",
     )
     parser.add_argument(
+        "--sync-state",
+        action="store_true",
+        help="state_manager.py sync-metrics を自動実行し project_state.json/MD へ即時同期する (V2.6)",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="詳細デバッグログを標準エラー出力へ表示する",
@@ -110,6 +115,19 @@ def main() -> None:
     save_metrics_json(
         json_path, workspace_root, merged_transcript, artifacts_data, scoring_result, retroactive_mode=args.retroactive
     )
+
+    # (d) state_manager.py との自動連携 (V2.6)
+    if args.sync_state:
+        state_mgr = workspace_root / "scripts" / "state_manager.py"
+        if not state_mgr.exists():
+            state_mgr = SCRIPT_DIR.parent.parent.parent / "scripts" / "state_manager.py"
+        if state_mgr.exists():
+            try:
+                import subprocess
+                subprocess.run([sys.executable, str(state_mgr), "sync-metrics", "--path", str(json_path)], cwd=str(workspace_root), check=False)
+            except Exception as e:
+                if args.debug:
+                    print(f"[debug] sync-state error: {e}", file=sys.stderr)
 
     # 5. CLI 標準出力サマリ
     print("=" * 76)

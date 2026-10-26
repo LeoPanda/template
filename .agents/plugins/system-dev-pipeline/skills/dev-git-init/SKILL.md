@@ -24,7 +24,7 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
 1. プロジェクトの `docs/Git運用基準書.md` が存在するか確認してください。
 2. 未配置の場合、プラグインの `templates/Git運用基準書.md` をプロジェクトの `docs/Git運用基準書.md` へコピー・配置してください。
 
-### 2. Gitリポジトリの初期化
+### 2. Gitリポジトリの初期化およびフック設定
 1. カレントディレクトリが既にGitリポジトリであるかを確認してください。
    ```bash
    git rev-parse --is-inside-work-tree
@@ -32,6 +32,10 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
 2. 未初期化の場合、デフォルトブランチを `main` として初期化してください。
    ```bash
    git init -b main
+   ```
+3. Hard Gate（コミット前機械的遮断）を有効化するため、Gitフックパスを設定してください。
+   ```bash
+   git config core.hooksPath .githooks
    ```
 
 ### 3. GitHubリモート（SSH接続）の設定

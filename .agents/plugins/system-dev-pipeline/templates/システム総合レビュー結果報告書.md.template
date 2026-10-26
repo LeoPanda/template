@@ -1,24 +1,27 @@
-# システム総合レビュー結果報告書 (V2.4)
+# システム総合レビュー結果報告書 (V2.6)
 
 - **レビュー実施日**: {{REVIEW_DATE}}
-- **実施ロール**: 🛡️ 本番リリース統括監査役 (qa-engineer)
+- **実施ロール**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (qa-engineer)
 - **対象プロファイル**: {{DEPLOYMENT_PROFILE}} <!-- [Profile A / B / C / D / E] -->
 - **対象バージョン**: {{APP_VERSION}}
+- **要件トレーサビリティ全域検証 (RTM)**: {{RTM_RESULT}} <!-- [scripts/traceability_checker.py --mode full: PASS (異常系比率20%以上) / BLOCKED] -->
 - **総合判定**: {{OVERALL_STATUS}} <!-- [RELEASE APPROVED / RELEASE BLOCKED] -->
 
 ## 1. 必須検証チェックリスト (Zero Tolerance)
-- [ ] 1. 本番用 .env.production で VITE_ENABLE_MOCK=false (モック無効化確認 & サイレントモックフォールバック厳格禁止 Fail-Fast 監査)
-- [ ] 2. 本番環境で DEBUG=False かつ IAP JWT署名検証が有効化
+- [ ] 1. 本番用環境変数で `VITE_ENABLE_MOCK=false` (本番モックOFF二重防御 ＆ サイレントモックフォールバック厳格排除 Fail-Fast 監査)
+- [ ] 2. 本番環境で `DEBUG=False` かつ IAP JWT署名二重検証（`core/auth.py`）が有効化
 - [ ] 3. entrypoint.sh による起動時 Alembic マイグレーション自動実行保証
-- [ ] 4. Litestream 同期ラグ監視エンドポイント (/api/internal/litestream/status) 正常稼働
-- [ ] 5. 平文パスワード・APIキーの完全排除
-- [ ] 6. スルーテスト成功率100% (未解決不具合 0件、Profile D 実ファイルDB検証含む)
-- [ ] 7. 直前リビジョンへのロールバック手順実証
+- [ ] 4. Litestream 同期監視エンドポイント (`/internal/health`, `/internal/litestream`) 正常稼働
+- [ ] 5. 平文シークレット・未置換プレースホルダーの完全排除 (Hard Gate HG-007 PASS)
+- [ ] 6. 要件トレーサビリティ充足率 100% ＆ 異常系テスト比率 20% 以上 (`traceability_checker.py --mode full` PASS)
+- [ ] 7. シナリオスルーテスト成功率 100% (未解決不具合 0件、MSWモック無効モードでの実通信検証)
+- [ ] 8. 直前リビジョンへのロールバック手順実証 (`本番適用作業手順書.md` 内に記載確認)
 
 ## 2. 環境稼働耐性評価
-- リソースフットプリント / コンテナ設定: 妥当性確認
-- ログ・エラー追跡性: 正常設定確認
+- リソースフットプリント / コンテナ設定: 妥当性確認 (`restart: "no"`, 非root実行)
+- 構造化ログ・追跡性: Aware UTC / log_id バインド正常確認
+- セキュリティ・権限: IAM / IAP 認可、`AllUsers` 排除確認
 
 ## 3. 最終リリース可否判定
 - **判定結果**: {{OVERALL_STATUS}}
-- **リリース条件**: ユーザーの明示的最終承認を経てデプロイ/配布を実行すること。
+- **リリース条件**: 👑 コンダクターが `python3 scripts/state_manager.py record-review --type system --verdict "RELEASE APPROVED"` を記録し、ユーザーの明示的最終承認を経てデプロイ/配布を実行すること。

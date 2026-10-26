@@ -18,6 +18,14 @@ description: "PHASE 5 ウォークスルー検証、モック透過切替検証 
 
 ## 作業手順
 
+### 0. 自動ブラウザ感覚センサー検証 (Chrome DevTools MCP / Visual & DOM Sensor)
+ユーザー提示前に、AIエージェント自身が実ブラウザ描画状態を計測・自己検証します：
+1. **コンソール & ネットワーク検査**: `navigate_page` ➔ `list_console_messages` で `console.error`、未捕捉例外、React Hydration Error が **0件** であることを確認。
+2. **デイライト/ダーク実測コントラスト比 (HG-006)**: `evaluate_script` で文字色と背景色を実測し、WCAG AA (4.5:1 以上) を満たすことを確認。
+3. **A11y & DOM 健全性**: `take_snapshot` で全ボタンのアクセシブル名解決とレイアウト崩れ・要素重なりがないことを確認。
+※UIなし（Profile E等）はスキップ。MCP未接続時は Playwright ヘッドレス検査へ自動フォールバック。
+※**Profile D (Tauri) 二段階ハイブリッド規約**: PHASE 4〜5 はブラウザモード（`npm run dev` ＋ MSW）で本ブラウザセンサー検証を完遂し、PHASE 6 で実機ネイティブ（`cargo tauri dev`）へ切り替えること。
+
 ### 1. ユーザーによる画面操作ウォークスルー & 不具合修正
 - ユーザーが画面操作や機能検証を行い、不具合や要望を提示します。
 - コンダクターが修正をオーケストレーションします：
@@ -47,8 +55,8 @@ description: "PHASE 5 ウォークスルー検証、モック透過切替検証 
 - ドキュメント同期完了後、🛡️ `qa-engineer` に `dev-review-code` を委譲します。
 - **1ファイル最大250行制限の機械的検査**、**コンポーネント内直書きモックの機械的検出・完全排除**、型同期検証、DRY原則、SRPを監査し、`docs/plans/コード品質レビュー及びリファクタリング提案書.md` を作成。
 - **判定結果に応じたフロー**:
-  - `CLEAN`: 次フェーズ（PHASE 6 スルーテスト）へ進行。
+  - `CLEAN`: コンダクターは `python3 scripts/state_manager.py record-review --type code --verdict CLEAN` を記録し、次フェーズ（PHASE 6 スルーテスト）へ進行。
   - `REFACTOR RECOMMENDED` / `BLOCKED`: コンダクターが指摘内容（Unified Diff）を確認し、BE/UIサブエージェントへ修正を委譲して是正。
 
 ### 6. 状態更新と承認ゲート提示
-- `PROJECT_STATE.md` を更新し、ウォークスルーおよびコードレビュー完了の明示的承認をユーザーに要請してください。
+- `python3 scripts/state_manager.py complete-task --id P5-T01` 等を実行し、ウォークスルーおよびコードレビュー完了の明示的承認をユーザーに要請してください。承認後は `python3 scripts/state_manager.py record-approval --phase PHASE_5` および `set-phase PHASE_6_TESTING` を実行します。

@@ -22,7 +22,7 @@ description: "PHASE 4 開発環境・システム構築スキル。コンダク�
 - `docs/テーブルスキーマ定義書.md`
 - `docs/ビジネスロジック仕様書.md`
 - `docs/画面仕様書.md`
-- `docs/AI駆動ロギングシステム仕様書.md`, `docs/APIキー安全管理・一元化設計書.md`
+- 定常コア8項目設計仕様（構造化ログ、Pydantic Settings、Aware UTC、モック二重防御）
 
 ### 2. 環境構築とBE/FE並行委譲（コンテキスト分離）
 コンダクターは直接大量のコードを書かず、以下の分担でオーケストレーションします：
@@ -54,7 +54,8 @@ docker compose exec backend alembic upgrade head
 # 4. バックエンド OpenAPI スキーマから TypeScript 型定義自動同期
 docker compose exec frontend npm run codegen:types
 
-# 5. コミット前CI同等ローカル検証ゲート
+# 5. コミット前CI同等ローカル検証ゲート & Hard Gate 機械的遮断
+python3 scripts/harness_guard.py --all
 docker compose exec backend ruff check .
 docker compose exec backend pytest
 docker compose exec frontend npm run lint
@@ -69,4 +70,4 @@ docker compose exec frontend npm run type-check
 - コンダクター専任で `dev-git-init` スキルを実行し、Git初期化（`main` ブランチ）、GitHub SSHリモート設定、初期コミット作成、および `feature` ブランチへの切り替えを行う。
 
 ### 5. 状態更新と報告
-- サブエージェントからの完了サマリを集約し、`PROJECT_STATE.md` の PHASE 4 を完了に更新してユーザーへ報告。
+- サブエージェントからの完了サマリを集約し、コンダクターは `python3 scripts/state_manager.py complete-task --id P4-T01` 等を実行してタスク完了を記録し、ステータスを `PHASE_5_WALKTHROUGH` へ進めてユーザーへ報告。

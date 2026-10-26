@@ -52,17 +52,21 @@ gitGraph
    - プラグインの `templates/Git運用基準書.md` をプロジェクトの `docs/Git運用基準書.md` へコピー・配置。
 2. **リポジトリ初期化**:
    - `git init -b main` を実行。
-3. **GitHubリモートの確認・設定**:
+3. **Hard Gate Pre-commit フックの有効化 (V2.6 Shift-Left)**:
+   - スケルトン配下の `.githooks/pre-commit` を有効化するため、`git config core.hooksPath .githooks` および `chmod +x .githooks/pre-commit` を実行。
+   - コミット時に `scripts/harness_guard.py --staged` が自動実行され、行数超過（FE 250行/BE 400行）、直書きモック、生SQL DDL、平文シークレット、AST適応度違反を機械的に遮断します。
+4. **GitHubリモートの確認・設定**:
    - リモートURL（`origin`）の存在を確認（`git remote get-url origin`）。
    - 未設定の場合、プロジェクト名を取得し `git remote add origin git@github.com:<GitHub-Username>/<Project-Name>.git` を設定。
-4. **基点コミットの作成**:
+5. **基点コミットの作成**:
    - `docs/Git運用基準書.md`、`.gitignore`（`wiki/`, `metrics/` 自動除外設定を含む）、ライセンス、初期ドキュメント等の初期設定ファイルをステージングし、`main` 上で初期コミットを作成（例: `feat: initial project setup`）。
-5. **開発ブランチの作成と移動**:
+6. **開発ブランチの作成と移動**:
    - `git checkout -b feature` を実行。
    - 以降の実装作業はすべて `feature` 上で進行。
 
 ### 3.2 開発中（PHASE 4〜7）のコミット運用
 - コミットのタイミングや粒度は開発者・エージェントの裁量に委ねられます。
+- すべてのコミットは Hard Gate pre-commit フック（`harness_guard.py`）により検証され、規約違反コードの混入が防止されます。
 - 細かな WIP（作業中）コミットや修正コミットを行っても、本番ブランチ側へ影響を与えることはありません。
 
 ### 3.3 PHASE 8: 本番リリース確定＆GitHub公開フロー（`dev-git-release`）

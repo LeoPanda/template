@@ -58,9 +58,9 @@ description: "新規システム開発プロジェクトの環境初期化を行
 
 ---
 
-## 5. 状態管理・台帳・ドキュメント雛形の配置
-1. **`PROJECT_STATE.md` の展開**:
-   - `PLUGIN_DIR/templates/PROJECT_STATE.md.template` から `./PROJECT_STATE.md` を生成し、`{{PROJECT_NAME}}`, `{{APP_VERSION}}` (`1.0.0`), `{{UPDATED_AT}}`, `{{EXECUTION_MODE}}`, `{{TEMPLATE_SOURCE}}` を埋め込みます。
+## 5. 状態管理台帳・ドキュメント雛形の初期化 (Single Writer 原則)
+1. **状態管理台帳 (`project_state.json` / `PROJECT_STATE.md`) の初期化**:
+   - `python3 scripts/state_manager.py init --name <プロジェクト名> --profile <選定プロファイル>` を実行し、機械正本 `project_state.json` とビュー `PROJECT_STATE.md` を決定論的に初期生成します。
 2. **`TEMPLATE_PROMOTIONS.md` および Wiki 台帳の初期化**:
    - `PLUGIN_DIR/templates/TEMPLATE_PROMOTIONS.md.template` を `./TEMPLATE_PROMOTIONS.md` へ配置します。
    - `./wiki/logs.md`（時系列ログ表）および `./wiki/skill-impact.md`（影響マップ表）を初期化します。
@@ -74,4 +74,4 @@ description: "新規システム開発プロジェクトの環境初期化を行
 
 ## 6. Antigravity 推奨設定案内と完了報告
 1. Antigravity 設定（`fileAccessPolicy: AGENT_SETTING_POLICY_ASK`, `sandboxMode: true`, `autoExecutionPolicy: CASCADE_COMMANDS_AUTO_EXECUTION_EAGER`, `artifactReviewMode: ARTIFACT_REVIEW_MODE_ALWAYS`）を案内します。
-2. `PROJECT_STATE.md` の PHASE 1 を完了に更新してステータスを `PHASE_2_REQUIREMENTS` へ進め、展開したファイル一覧・動作モード・Knowledge Hub 同期状態をユーザーへ報告してください。
+2. `python3 scripts/state_manager.py set-phase PHASE_2_REQUIREMENTS` を実行してステータスを進め、展開したファイル一覧・動作モード・Knowledge Hub 同期状態をユーザーへ報告してください。
