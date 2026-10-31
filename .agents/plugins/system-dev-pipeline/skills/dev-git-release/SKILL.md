@@ -44,7 +44,30 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    ```
 2. バージョン番号が取得できない場合は、デフォルトとして `1.0.0` を設定するか、ユーザーにバージョン番号の確認を求めてください。
 
-### 3. 本番ブランチへの統合（Squash Merge）とコミット・タグ付与
+### 3. リリース前ローカル CI 検証ゲート (Pre-Push CI Gate / Shift-Left Hard Gate)
+`main` への統合およびプッシュを行う前に、リモート GitHub Actions CI と同等の全チェックをローカルで事前実行し、すべて PASS することを機械的に検証してください。1つでもエラーがある場合はリリースを中断し、原因を解消してください。
+
+1. **バックエンド検証 (Ruff Lint, Mypy 型チェック, Pytest)**:
+   ```bash
+   if [ -d "backend" ]; then
+     (cd backend && (ruff check . || ../.venv/bin/ruff check .) && (mypy app || ../.venv/bin/mypy app) && (pytest || ../.venv/bin/pytest))
+   fi
+   ```
+2. **フロントエンド検証 (TypeScript 型チェック, プロダクションビルド)**:
+   ```bash
+   if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+     (cd frontend && npm run type-check && npm run build)
+   fi
+   ```
+3. **Hard Gate ガードレール検証**:
+   ```bash
+   if [ -f "scripts/harness_guard.py" ]; then
+     python3 scripts/harness_guard.py --all
+   fi
+   ```
+※ 上記のいずれかが終了コード 1（失敗）となった場合は、**`main` へのチェックアウトおよびマージを即座に中断**し、エラー原因を解消してから本スキルを再実行してください。
+
+### 4. 本番ブランチへの統合（Squash Merge）とコミット・タグ付与
 1. 本番ブランチ `main` に切り替えてください。
    ```bash
    git checkout main
@@ -62,14 +85,14 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    git tag -a "v${VERSION}" -m "Release v${VERSION}"
    ```
 
-### 4. GitHubへのプッシュ（SSH接続）
+### 5. GitHubへのプッシュ（SSH接続）
 1. GitHubのリモートリポジトリ（`origin`）へ `main` ブランチおよびタグをプッシュしてください。
    ```bash
    git push -u origin main
    git push origin "v${VERSION}"
    ```
 
-### 5. 開発ブランチの刷新（削除と再作成）
+### 6. 開発ブランチの刷新（削除と再作成）
 1. 旧 `feature` ブランチを削除してください。
    ```bash
    git branch -D feature
@@ -79,5 +102,5 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    git checkout -b feature
    ```
 
-### 6. 状態管理（PROJECT_STATE.md）との同期
+### 7. 状態管理（PROJECT_STATE.md）との同期
 1. `PROJECT_STATE.md` のバージョン情報、現在のブランチ（`feature`）、および最新リリースコミットハッシュを記録・同期してください。

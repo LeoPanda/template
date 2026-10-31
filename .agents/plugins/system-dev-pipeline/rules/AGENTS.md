@@ -1,4 +1,4 @@
-# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.6)
+# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.6.1)
 
 本プロジェクトおよび開発パイプラインにおいては、以下の開発・運用規約に従うものとする。
 
@@ -14,10 +14,11 @@
 ## 1. ドキュメントおよびコードの文字コード・フォーマット
 - すべてのドキュメントおよびソースコードは UTF-8 (BOMなし) で保存し、改行コードは LF (`\n`) に統一する。
 - Markdownファイルは標準記法に従う。設計書等のMarkdown内リンクは環境依存を防ぎ移植性を担保するため、絶対パスを禁止し**必ずファイル間の相対パス（例: `../設計書.md`）を使用する**。
+- **Mermaid 構文安全規約**: 設計書および Markdown 内で Mermaid ダイアグラムを記述する際、矢印ラベル（`-->|"..."|`）やノード名に特殊記号（丸括弧 `()`、角括弧 `[]`、波括弧 `{}`、隅付き括弧 `【】`、スラッシュ `/`、コロン `:` 等）を含める場合は、必ずラベル全体をダブルクォーテーション（`"`）で囲まなければならない（コミット前 `harness_guard.py` で機械遮断）。
 
 ---
 
-## 2. 5大エージェント協調モデルと責務分担 (V2.6)
+## 2. 5大エージェント協調モデルと責務分担 (V2.6.1)
 本システムは、以下の5大エージェントによる明確な関心事分離とオーケストレーション体制で自律推進される。
 
 1. 👑 **プロジェクトコンダクター (`conductor`) [Main Agent]**:
@@ -26,6 +27,7 @@
    - 初期スケルトン展開、環境変数設定、標準コマンドシーケンス（Alembic/Codegen/CI/Hard Gate）の統括実行。
    - 専任コマンド実行: Git操作（`dev-git-init`, `dev-git-release`）、本番デプロイ、DB強制上書き、コンテナ起動停止。
    - PHASE 8 における知見・メトリクス統括（`metrics_collector.py --all --sync-state`, `pipeline-reconciler.sh`）。
+   - **【コード・設計書直接編集原則禁止】**: コンダクターが `docs/設計書/`、`backend/`、`frontend/` 配下のファイルを直接編集（`edit_file`, `write_file`）することを原則禁止する。設計変更は必ず `architect`、実装は `backend-engineer` または `ui-designer` へ `invoke_subagent` 経由で委譲しなければならない。
 2. 📐 **設計・立案スペシャリスト (`architect`) [Subagent]**:
    - 2層プロファイル体系の設計、要件定義書での `[REQ-Fxx]` / `[REQ-NFxx]` 採番、4大基本設計書（技術・スキーマ・ロジック・画面）作成および対応要件ID明記。
    - 外部API二重キャッシュ戦略（TTLメモリ＋DBキャッシュ）、モック制御仕様（案C＋案A）、Alembic前提スキーマの設計。
@@ -42,13 +44,13 @@
    - **Hard Gate & 3大レビュー厳格監査**:
      - 基本設計レビュー (`dev-review-arch`): `traceability_checker.py --mode design` PASS 必須。
      - コード品質レビュー (`dev-review-code`): `harness_guard.py --all` PASS 必須（250/400行・直書きモック排除）。
-     - システム総合レビュー (`dev-review-system`): 本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py --mode full` PASS 必須（異常系比率20%以上）。
+     - システム総合レビュー (`dev-review-system`): 本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py --mode full` PASS 必須（異常系比率20%以上、3階層深層アサーション監査）。
    - ブラウザ感覚センサー（Chrome DevTools MCP / A11y / コンソールエラーゼロ）検証、RCA即時記録（`wiki-maintainer`）。
    - **【コード直接改変禁止】** システムコードに不具合を発見した場合は勝手に修正せず、調査結果とDiff案をコンダクターへ報告する。
 
 ---
 
-## 3. 構造化状態台帳と Single Writer 原則 (V2.6 Hybrid State Ledger)
+## 3. 構造化状態台帳と Single Writer 原則 (V2.6.1 Hybrid State Ledger)
 - 状態管理は、機械正本 `project_state.json` と自動生成ビュー `PROJECT_STATE.md` を1対1同期する。
 - 更新権限は **👑 プロジェクトコンダクター専任** とし、`state_manager.py` 経由で原子的・決定論的に更新する。サブエージェントによる直接編集や手動改ざんはハッシュ不一致により遮断される。
 
@@ -59,16 +61,25 @@
 
 ### 4.1 第1層: 定常的コア設計規範 (全プロファイル共通)
 1. **Hard Gate 物理遮断**: Git `pre-commit` フックおよび CI ゲートで `harness_guard.py` を実行し、250/400行制限、直書きモック、生SQL、AST違反をコミット前に機械遮断する。
-2. **要件トレーサビリティ機械検証**: 要件定義 `REQ-*` から設計・テストコードまでの 100% カバレッジと異常系テスト比率（20%以上）を `traceability_checker.py` で機械検証する。
+2. **要件トレーサビリティ機械検証 & 3階層深層アサーション**:
+   - 要件定義 `REQ-*` から設計・テストコードまでの 100% カバレッジと異常系テスト比率（20%以上）を `traceability_checker.py` で機械検証する。
+   - 単なるDOM存在確認（浅いアサーション）を排除し、「第1層（構造検証）」「第2層（状態・属性遷移検証）」「第3層（副作用・連動描画検証）」を満たすテストのみを有効カウント対象とする。
 3. **ブラウザ感覚センサー**: Chrome DevTools MCP により実ブラウザのコンソールエラー 0件、WCAG AA コントラスト比（4.5:1）、A11yツリーを自動計測・検証する。
 4. **型定義自動同期**: OpenAPI ➔ TypeScript Codegen 完全利用。
-5. **シークレット厳格バリデーション**: Pydantic Settings による起動時即死ガード。
+5. **シークレット厳格バリデーション & Dual Provisioning 原則**:
+   - Pydantic Settings による起動時即死ガード。
+   - Git追跡用公開テンプレート `.env.example` とローカル実行用実体 `.env` を常にセットで同期・維持する。欠落時は自己修復（補完）または安全フォールバックを行う。
 6. **統一タイムゾーン運用**: Aware UTC 保存 / JST 表示。
 7. **モック制御アダプター層**: 環境変数切替 (案C) ＋ 直書きモック排除 (案A)。実結合モードでのサイレントモックフォールバック厳格禁止。
 8. **画面グランドデザイン規範**: 4px/8pxグリッド、HEX/px絶対値併記、デイライト視認性（明暗ペア指定）。
+9. **CI・静的解析・テスト実行ディレクトリ非依存**:
+   - バックエンド静的解析（`pyproject.toml`）にはフレームワーク標準イディオム（FastAPI `Depends` 等）競合抑止（`B008`, `E402` ignore）および循環参照許容を初期配備。
+   - リポジトリ除外設定（`.gitignore`）で `*.json` 等を広範除外する場合も `!package-lock.json` はホワイトリスト保護する。
+   - シナリオテストコードは実行カレントディレクトリ非依存パス（`ROOT_DIR = Path(__file__).resolve().parent.parent.parent`）を使用する。
 
 ### 4.2 第2層: システム展開プロファイル (Profile A〜E)
-- **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream (`litestream run`) + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
+- **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
+  - **Litestream スーパーバイザー起動構文**: コンテナ起動スクリプト（`entrypoint.sh`）では必ず正規構文 `exec litestream replicate -config /etc/litestream.yml -exec "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"` を使用すること（誤った `run` 構文の禁止）。
 - **Profile B (Web SSR / フルマネージドRDB型)**: Next.js/Nuxt SSR または FastAPI + Cloud SQL (PostgreSQL) + Alembic。
 - **Profile C (静的MPA / 超軽量ツール型)**: FastAPI + Jinja2 + HTMX / 単一バイナリCLI。
 - **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + 二段階ハイブリッド運用。
@@ -84,7 +95,7 @@
 
 ---
 
-## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.6)
+## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.6.1)
 1. **試行錯誤・RCAのローカル固定蓄積**: エラー・手戻りのRCAは、**必ずカレントプロジェクト配下の `./wiki/`** に蓄積する。
 2. **二層分離 (Two-Tier Separation) と二段階進化**:
    - **Tier 1 (プロジェクト固有仕様)**: `./wiki/patterns/local/` に記録し、各ゲートで `docs/` および台帳へ逆同期して完結。
@@ -107,9 +118,10 @@
 
 ---
 
-## 8.5 外部CLIの非対話実行とバックグラウンド待機タイムアウト保護
+## 8.5 外部CLIの非対話実行、タイムアウト保護、およびフェーズ境界遵守
 - 外部CLI実行時は `--quiet`、`--yes` 等の非対話オプションを明示指定する。`2>/dev/null` による標準エラー出力破棄は禁止。
 - バックグラウンドタスク待機時は必ず `schedule` ツールでワンショット・タイムアウト監視を設定する。
+- **Stage/Phase 境界の厳格遵守**: たとえ「終端処理」「クローズ」等の語句が含まれていても、次の Stage / Phase（特に GitHub push、タグ公開、本番デプロイ等の外部影響を伴う不可逆操作）をユーザーの明示的指示・承認なしに先走って実行してはならない。
 
 ---
 
@@ -120,6 +132,10 @@
 ---
 
 ## 10. ドキュメント管理および改訂ライフサイクル規約 (Revision Lifecycle)
-1. **docs/ 運用ルール**: `docs/設計書/` と `docs/検討課題/` に完全分離し、`docs/設計書/Current/` を唯一の正（Single Source of Truth）とする。
+1. **docs/ 運用ルール**:
+   - `docs/設計書/` と `docs/検討課題/` に完全分離し、`docs/設計書/Current/` を唯一の正（Single Source of Truth）とする。
+   - 正本設計書タイトルからは個別バージョン番号（`V1.x`）を排除し、システム SemVer（`APP_VERSION`）で一元管理する。
+   - 改定履歴テーブルには「対象システムバージョン」および「改訂依頼番号（`MAJOR.MINOR.xxx`）」を必須記録項目としてバインドする。
 2. **改訂ライフサイクル (5段階)**:
    - 初期開発完了後の機能追加・Hotfixは、`state_manager.py start-revision`（起票）➔ 差分要件/設計（`REQ-*` ＆ RTM）➔ 差分実装（Hard Gate pre-commit）➔ 回帰/感覚センサー検証（RTM full）➔ `state_manager.py complete-revision`（完了）のサイクルを厳守する。
+   - 改訂サイクル完了時（`complete-revision` 実行時）、エージェントは `app_version`、`current_branch`、`decisions`、`open_questions` の整合性および専任サブエージェントへの委譲履歴（セルフ直接編集の抑止）を指差し確認し、整合性を機械検証してからクローズする。

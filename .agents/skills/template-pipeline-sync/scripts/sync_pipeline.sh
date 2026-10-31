@@ -16,79 +16,11 @@ BACKUP_BASE_DIR="${HOME}/.gemini/backups/system-dev-pipeline"
 KNOWLEDGE_HUB_DIR="${HOME}/.gemini/knowledge-hub"
 SYNC_STAMP_FILE="${WORKSPACE_ROOT}/.git/pipeline_sync_stamp"
 
-SEC11_HEADER="## 11. パイプライン改訂作業におけるグローバル・ワークスペース同期規約"
+PLUGIN_RULES_MARKER="AI駆動システム開発プロセス標準規約"
+WS_LOCAL_MARKER="template ワークスペース ローカル開発・改訂規約"
 
 # ------------------------------------------------------------------------------
-# ヘルパー関数: ルート rules/AGENTS.md から共通部(第1〜10節)と固有部(第11節)を分離
-# ------------------------------------------------------------------------------
-extract_root_rules_common() {
-  local target_file="$1"
-  if [[ ! -f "$target_file" ]]; then
-    return 0
-  fi
-  python3 - "$target_file" "$SEC11_HEADER" << 'PYEOF'
-import sys, pathlib, re
-
-path = pathlib.Path(sys.argv[1])
-header = sys.argv[2]
-text = path.read_text(encoding="utf-8")
-
-if header in text:
-    idx = text.index(header)
-    prefix = text[:idx]
-    # 直前の "---" セパレータを除去して末尾改行を1つに揃える
-    prefix = re.sub(r'\n+---\n*$', '\n', prefix)
-    sys.stdout.write(prefix)
-else:
-    sys.stdout.write(text)
-PYEOF
-}
-
-extract_root_rules_sec11() {
-  local target_file="$1"
-  if [[ ! -f "$target_file" ]]; then
-    return 0
-  fi
-  python3 - "$target_file" "$SEC11_HEADER" << 'PYEOF'
-import sys, pathlib
-
-path = pathlib.Path(sys.argv[1])
-header = sys.argv[2]
-text = path.read_text(encoding="utf-8")
-
-if header in text:
-    idx = text.index(header)
-    sys.stdout.write(text[idx:])
-PYEOF
-}
-
-# ------------------------------------------------------------------------------
-# ヘルパー関数: プラグイン正本 rules/AGENTS.md をルート rules/AGENTS.md の共通部へ反映
-# ------------------------------------------------------------------------------
-sync_root_rules_from_plugin() {
-  python3 - "$WS_PLUGIN/rules/AGENTS.md" "$WS_ROOT_RULES" "$SEC11_HEADER" << 'PYEOF'
-import sys, pathlib
-
-plugin_rules_path = pathlib.Path(sys.argv[1])
-root_rules_path = pathlib.Path(sys.argv[2])
-header = sys.argv[3]
-
-plugin_text = plugin_rules_path.read_text(encoding="utf-8").rstrip() + "\n"
-root_text = root_rules_path.read_text(encoding="utf-8") if root_rules_path.exists() else ""
-
-if header in root_text:
-    idx = root_text.index(header)
-    sec11_text = root_text[idx:].rstrip() + "\n"
-    combined = plugin_text + "\n---\n\n" + sec11_text
-else:
-    combined = plugin_text
-
-root_rules_path.write_text(combined, encoding="utf-8")
-PYEOF
-}
-
-# ------------------------------------------------------------------------------
-# ヘルパー関数: グローバルプラグインのツリーハッシュ計算 & 同期証跡スタンプ更新 (提案1)
+# ヘルパー関数: グローバルプラグインのツリーハッシュ計算 & 同期証跡スタンプ更新
 # ------------------------------------------------------------------------------
 compute_tree_hash() {
   local dir="$1"
@@ -127,7 +59,7 @@ EOF
 # 診断・ステータス表示 (--status)
 # ------------------------------------------------------------------------------
 run_status() {
-  python3 - "$WORKSPACE_ROOT" "$WS_PLUGIN" "$WS_ROOT_RULES" "$GLOBAL_PLUGINS_DIR" "$GLOBAL_PLUGIN" "$KNOWLEDGE_HUB_DIR" "$SEC11_HEADER" "$SYNC_STAMP_FILE" << 'PYEOF'
+  python3 - "$WORKSPACE_ROOT" "$WS_PLUGIN" "$WS_ROOT_RULES" "$GLOBAL_PLUGINS_DIR" "$GLOBAL_PLUGIN" "$KNOWLEDGE_HUB_DIR" "$PLUGIN_RULES_MARKER" "$WS_LOCAL_MARKER" "$SYNC_STAMP_FILE" << 'PYEOF'
 import sys, os, pathlib, subprocess, hashlib, json, datetime, re
 
 ws_root = pathlib.Path(sys.argv[1])
@@ -136,8 +68,9 @@ ws_root_rules = pathlib.Path(sys.argv[3])
 global_plugins_dir = pathlib.Path(sys.argv[4])
 global_plugin = pathlib.Path(sys.argv[5])
 hub_dir = pathlib.Path(sys.argv[6])
-sec11_header = sys.argv[7]
-stamp_file = pathlib.Path(sys.argv[8])
+plugin_marker = sys.argv[7]
+ws_local_marker = sys.argv[8]
+stamp_file = pathlib.Path(sys.argv[9])
 
 print("=" * 76)
 print("🔍 [template-pipeline-sync] グローバル ⇔ ワークスペース 同期診断レポート")
@@ -221,22 +154,28 @@ for rel in all_rel:
             else:
                 cause_c_files.append((rel, "GlobalとWorkspaceの双方に固有の変更行あり (要マージ確認)"))
 
-# 3. ワークスペース内 rules/AGENTS.md (共通部 + 第11節) の整合性検査 (提案 2-B)
+# 3. ワークスペース内 rules/AGENTS.md 役割分離・重複排除検査 (v2.6.1)
 root_rules_issues = []
 plugin_rules_file = ws_plugin / "rules/AGENTS.md"
-if plugin_rules_file.exists() and ws_root_rules.exists():
+if not plugin_rules_file.exists():
+    root_rules_issues.append("配布用プラグイン側 (.agents/plugins/.../rules/AGENTS.md) が存在しません")
+elif not ws_root_rules.exists():
+    root_rules_issues.append("ワークスペースルート側 (rules/AGENTS.md) が存在しません")
+else:
     p_text = plugin_rules_file.read_text(encoding="utf-8")
     r_text = ws_root_rules.read_text(encoding="utf-8")
-    if sec11_header in p_text:
-        root_rules_issues.append("配布用プラグイン側 (.agents/plugins/.../rules/AGENTS.md) にワークスペース固有の第11節が混入しています")
-    if sec11_header not in r_text:
-        root_rules_issues.append("ワークスペースルート側 (rules/AGENTS.md) に第11節（同期規約）が未記載です")
-        r_common = r_text
-    else:
-        idx = r_text.index(sec11_header)
-        r_common = re.sub(r'\n+---\n*$', '\n', r_text[:idx])
-    if p_text.rstrip() != r_common.rstrip():
-        root_rules_issues.append("ワークスペースルート rules/AGENTS.md の共通部(第1〜10節)とプラグイン正本に差分があります")
+
+    # プラグイン側にワークスペース専用規約が混入していないか
+    if ws_local_marker in p_text or "template-pipeline-sync" in p_text:
+        root_rules_issues.append("配布用プラグイン側 (.agents/plugins/.../rules/AGENTS.md) にワークスペース固有規約が混入しています")
+
+    # ルート側にプラグイン共通規約（標準規約）が重複混入していないか
+    if re.search(r"^#\s*AI駆動システム開発プロセス標準規約", r_text, re.MULTILINE) or "## 2. 5大エージェント協調モデル" in r_text or "## 4. 2層構造システムプロファイル" in r_text:
+        root_rules_issues.append("ワークスペースルート (rules/AGENTS.md) にプラグイン共通規約が重複混入しています（ノイズ輻輳防止のため削除してください）")
+
+    # ルート側にローカル固有規約が正しく存在しているか
+    if ws_local_marker not in r_text:
+        root_rules_issues.append("ワークスペースルート (rules/AGENTS.md) にローカル専用規約マーカーが未記載です")
 
 # 4. Central Knowledge Hub (~/.gemini/knowledge-hub/) 未吸収原票チェック (提案 5)
 absorbed_claims = set()
@@ -288,9 +227,9 @@ else:
     for item in cause_d_items:
         print(f"     - {item}")
 
-print("\n[3] ワークスペース内 rules/AGENTS.md 役割分離・共通部整合性 (提案 2-B):")
+print("\n[3] ワークスペース内 rules/AGENTS.md 役割分離・重複排除検査 (v2.6.1):")
 if not root_rules_issues:
-    print("  ✅ 共通部(第1〜10節)は完全一致しており、第11節はルート規約のみに分離配置されています。")
+    print("  ✅ ワークスペースルートとプラグイン正本の役割分離が完了しており、ルール重複・ノイズはありません。")
 else:
     issues_count += len(root_rules_issues)
     for item in root_rules_issues:
@@ -321,7 +260,7 @@ else:
     if cause_b_files and not cause_a_files and not cause_c_files:
         print("   ・改訂完了後のGlobal反映 (Deploy): sync_pipeline.sh --deploy (※要ユーザー承認)")
     if root_rules_issues:
-        print("   ・ルート rules/AGENTS.md 共通部の同期: sync_pipeline.sh --sync-root-rules")
+        print("   ・rules/AGENTS.md の役割分離・重複解消を手動確認してください")
     sys.exit(2)
 PYEOF
 }
@@ -354,8 +293,6 @@ run_backport() {
   run_cleanup
   echo "📥 [Backport] Global (~/.gemini/config/plugins/system-dev-pipeline) -> Workspace 正本へ逆同期しています..."
   rsync -av --exclude=".DS_Store" --exclude="*.orig" --exclude="*.rej" "${GLOBAL_PLUGIN}/" "${WS_PLUGIN}/"
-  echo "🔄 [Root Rules Sync] ワークスペースルートの rules/AGENTS.md 共通部(第1〜10節)を連動更新しています..."
-  sync_root_rules_from_plugin
   update_sync_stamp "backport"
   echo "✅ [Backport] 逆同期および証跡スタンプの更新が完了しました。"
 }
@@ -376,8 +313,6 @@ run_deploy() {
   echo "🚀 [Deploy] Workspace 正本 -> Global (~/.gemini/config/plugins/system-dev-pipeline) へ反映しています..."
   mkdir -p "$GLOBAL_PLUGIN"
   rsync -av --delete --exclude=".DS_Store" --exclude="*.orig" --exclude="*.rej" "${WS_PLUGIN}/" "${GLOBAL_PLUGIN}/"
-  echo "🔄 [Root Rules Sync] ワークスペースルートの rules/AGENTS.md 共通部(第1〜10節)を連動更新しています..."
-  sync_root_rules_from_plugin
   if [[ -f "${GLOBAL_PLUGIN}/scripts/pipeline-reconciler.sh" ]]; then
     echo "🔄 [Upgrade Reconciler] Global Knowledge Hub との照合・マイグレーションを実行しています..."
     bash "${GLOBAL_PLUGIN}/scripts/pipeline-reconciler.sh" --upgrade
@@ -387,17 +322,18 @@ run_deploy() {
 }
 
 # ------------------------------------------------------------------------------
-# Git pre-commit フック用チェック (--pre-commit-check) (提案1)
+# Git pre-commit フック用チェック (--pre-commit-check)
 # ------------------------------------------------------------------------------
 run_pre_commit_check() {
-  python3 - "$WORKSPACE_ROOT" "$WS_PLUGIN" "$WS_ROOT_RULES" "$GLOBAL_PLUGIN" "$SEC11_HEADER" << 'PYEOF'
+  python3 - "$WORKSPACE_ROOT" "$WS_PLUGIN" "$WS_ROOT_RULES" "$GLOBAL_PLUGIN" "$PLUGIN_RULES_MARKER" "$WS_LOCAL_MARKER" << 'PYEOF'
 import sys, pathlib, subprocess, re
 
 ws_root = pathlib.Path(sys.argv[1])
 ws_plugin = pathlib.Path(sys.argv[2])
 ws_root_rules = pathlib.Path(sys.argv[3])
 global_plugin = pathlib.Path(sys.argv[4])
-sec11_header = sys.argv[5]
+plugin_marker = sys.argv[5]
+ws_local_marker = sys.argv[6]
 
 # ステージングされたファイルを取得
 r = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=ws_root, capture_output=True, text=True)
@@ -426,19 +362,15 @@ if global_plugin.exists():
                     if any("PAT-" in ln for ln in g_only):
                         errors.append(f"Global側の昇格知見がWorkspaceへ未反映です: {rel}")
 
-# 2. 提案2-B: 配布用プラグイン側に第11節が混入していないか & 共通部が一致しているか
+# 2. 役割分離検査: 配布用プラグイン側にローカル規約が混入していないか & ルート側にプラグイン規約が重複していないか
 p_rules = ws_plugin / "rules/AGENTS.md"
 if p_rules.exists() and ws_root_rules.exists():
     p_text = p_rules.read_text(encoding="utf-8")
     r_text = ws_root_rules.read_text(encoding="utf-8")
-    if sec11_header in p_text:
-        errors.append(".agents/plugins/system-dev-pipeline/rules/AGENTS.md にワークスペース固有の第11節が混入しています。")
-    if sec11_header in r_text:
-        r_common = re.sub(r'\n+---\n*$', '\n', r_text[:r_text.index(sec11_header)])
-    else:
-        r_common = r_text
-    if p_text.rstrip() != r_common.rstrip():
-        errors.append("rules/AGENTS.md の共通部(第1〜10節)と .agents/plugins/.../rules/AGENTS.md が不一致です。`sync_pipeline.sh --sync-root-rules` を実行してください。")
+    if ws_local_marker in p_text or "template-pipeline-sync" in p_text:
+        errors.append(".agents/plugins/system-dev-pipeline/rules/AGENTS.md にワークスペース固有の規約が混入しています。")
+    if re.search(r"^#\s*AI駆動システム開発プロセス標準規約", r_text, re.MULTILINE) or "## 2. 5大エージェント協調モデル" in r_text:
+        errors.append("rules/AGENTS.md にプラグイン共通規約が重複混入しています。ワークスペース固有規約のみを残してください。")
 
 if errors:
     print("🚨 [Git Pre-commit Guard: パイプライン同期エラー]")
@@ -478,15 +410,11 @@ case "$MODE" in
     run_deploy
     run_status
     ;;
-  --sync-root-rules)
-    sync_root_rules_from_plugin
-    echo "✅ ワークスペースルートの rules/AGENTS.md 共通部をプラグイン正本と同期しました。"
-    ;;
   --pre-commit-check)
     run_pre_commit_check
     ;;
   *)
-    echo "Usage: $0 [--status | --cleanup | --backport | --deploy | --sync-root-rules | --pre-commit-check]"
+    echo "Usage: $0 [--status | --cleanup | --backport | --deploy | --pre-commit-check]"
     exit 1
     ;;
 esac

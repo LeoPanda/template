@@ -171,7 +171,7 @@ flowchart TD
   2. 🛡️ `qa-engineer`: `dev-review-system` システム総合レビュー（判定: `RELEASE APPROVED` 必須）。
      - 本番用 `VITE_ENABLE_MOCK=false` 二重防御検証（Fail-Fast 含む）。
      - IAP JWT 署名検証ミドルウェア有効化検証。
-     - Profile A: `entrypoint.sh` による `litestream run` スーパーバイザー起動保証（SIGTERM シグナル伝播と最終 WAL フラッシュ同期保証）。
+     - Profile A: `entrypoint.sh` による正規スーパーバイザー起動保証 (`exec litestream replicate ... -exec`)（SIGTERM シグナル伝播と最終 WAL フラッシュ同期保証）。
      - Litestream レプリケーション設定および監視エンドポイント検証。
      - 平文シークレット完全排除、非root実行確認。
   3. 👑 コンダクター: 本番環境（Cloud Run等）初回デプロイ実行（`--quiet` 非対話フラグ＋`schedule` タイムアウト監視）。

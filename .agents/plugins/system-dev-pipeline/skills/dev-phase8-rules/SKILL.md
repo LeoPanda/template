@@ -56,4 +56,6 @@ description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md)
 
 ### 6. システム改訂ルールの配置と状態管理の更新
 - `templates/システム改訂ルール.md` を `rules/システム改訂ルール.md` に配置し、`AGENTS.md` / `GEMINI.md` / `.agents/rules/system-revision.md`（修正後の `docker compose down` ＋ `up --build -d` 徹底、`LOCAL_FEEDBACK_RULES.md` 参照フック、`dev-git-release` 実行を含む）を適用します。
+- **改訂サイクル完了時の機械的・意味的整合性監査 (PAT-SYS-008)**:
+  以降の機能改訂完了時（`complete-revision` 実行時）、コンダクターは `app_version`、`current_branch`、`decisions`、`open_questions` の完全一致および専任サブエージェントへの委譲履歴（セルフ直接編集の抑止）を指差し確認し、整合性を検証してからクローズしてください。
 - `python3 scripts/state_manager.py set-phase PRODUCTION_ACTIVE` を実行してステータスを本番稼働中へ更新し、改訂管理体制への移行を完了してください。

@@ -8,6 +8,7 @@ import ast
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,11 @@ ABSOLUTE_PATH_PATTERN = re.compile(r"\[.*?\]\((file:///|/Users/|/home/|[A-Za-z]:
 MOCK_CALL_PATTERN = re.compile(r"\b(mockUsers|dummyData|MOCK_[A-Z0-9_]+)\b")
 SILENT_MOCK_FALLBACK = re.compile(r"catch\s*(\(.*?\))?\s*\{\s*return\s+.*?(mock|dummy)", re.IGNORECASE | re.DOTALL)
 DAYLIGHT_DARK_CLASSES = re.compile(r"\b(?<!dark:)(text-(slate|zinc|gray|neutral)-(200|300)|bg-(slate|zinc|gray|neutral)-(900|950)|bg-blue-950)\b")
+
+# PAT-DOC-003: Mermaid bracketed unquoted label pattern
+MERMAID_UNQUOTED_BRACKET_LABEL = re.compile(r"-->\|([^\"\|\n]*[\(\)\[\]\{\}【】][^\"\|\n]*)\|")
+# PAT-DOC-002: Document individual version in title
+DOC_TITLE_VERSION_PATTERN = re.compile(r"^#\s+.*?\([Vv]\d+(\.\d+)*\)")
 
 def get_git_staged_files() -> list[str]:
     try:
@@ -122,12 +128,35 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                                             hint="セマンティックデザイントークンまたは明暗ペア指定 (例: bg-blue-50 text-blue-800 dark:...) を使用してください。"))
 
     # HG-007: Plaintext secrets & placeholders
-    if not norm.endswith((".example", ".sample", ".schema.json", ".template")) and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/")):
+    if not norm.endswith((".example", ".sample", ".schema.json", ".template")) and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/")) and norm != "scripts/harness_guard.py":
         for pattern, label in SECRET_PATTERNS:
             for idx, line in enumerate(lines, 1):
                 if pattern.search(line) and not line.strip().startswith("#"):
                     violations.append(Violation("HG-007", "BLOCK", norm, f"平文シークレット/未置換プレースホルダー検出 ({label})", line_no=idx,
                                                 hint="環境変数 (.env) または Pydantic Settings へ外出ししてください。"))
+
+    # HG-008 (PAT-DOC-003): Mermaid bracketed unquoted label check
+    if norm.endswith(".md") and not norm.startswith(("docs/設計書/v", "docs/設計書/V", "docs/検討課題/")):
+        in_mermaid = False
+        for idx, line in enumerate(lines, 1):
+            if line.strip().startswith("```mermaid"):
+                in_mermaid = True
+                continue
+            elif in_mermaid and line.strip().startswith("```"):
+                in_mermaid = False
+                continue
+            if in_mermaid:
+                m = MERMAID_UNQUOTED_BRACKET_LABEL.search(line)
+                if m:
+                    violations.append(Violation("HG-008", "BLOCK", norm, f"Mermaid矢印ラベル内の特殊記号・括弧がダブルクォートされていません: |{m.group(1)}|", line_no=idx,
+                                                hint='矢印ラベル全体をダブルクォートで囲んでください (例: -->|"ラベル (補足)"|)。'))
+
+    # HG-009 (PAT-DOC-002): Document individual version in title
+    if norm.startswith("docs/設計書/Current/") and norm.endswith(".md"):
+        for idx, line in enumerate(lines[:10], 1):
+            if DOC_TITLE_VERSION_PATTERN.search(line):
+                violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書タイトルに個別バージョン番号が含まれています: {line.strip()}", line_no=idx,
+                                            hint="正本設計書タイトルから個別バージョン番号を排除し、システム SemVer (APP_VERSION) で一元管理してください。"))
 
     return violations
 
@@ -158,6 +187,7 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
                     if (isinstance(base, ast.Name) and "BaseModel" in base.id) or \
                        (isinstance(base, ast.Attribute) and "BaseModel" in base.attr):
                         dto_count += 1
+
         # 例外握りつぶし: except Exception: pass または except: ...
         if isinstance(node, ast.ExceptHandler):
             is_pass = len(node.body) == 1 and (
@@ -173,6 +203,17 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
                                     hint="schemas/ などの独立モジュールへDTOを物理分離してください。"))
     return violations
 
+def enforce_dual_provisioning(root: Path):
+    """PAT-ENV-001: Ensure .env exists if .env.example exists (Self-Healing)."""
+    env_example = root / ".env.example"
+    env_file = root / ".env"
+    if env_example.is_file() and not env_file.exists():
+        try:
+            shutil.copy(env_example, env_file)
+            print("🔧 [HARNESS GUARD Self-Healing] .env.example から .env を自動生成補完しました (Dual Provisioning).")
+        except Exception as e:
+            print(f"⚠️ [HARNESS GUARD] .env の自動生成補完に失敗しました: {e}", file=sys.stderr)
+
 def main():
     parser = argparse.ArgumentParser(description="AI Harness Hard Gate Static Enforcement Engine")
     parser.add_argument("--all", action="store_true", help="Scan entire workspace")
@@ -181,6 +222,10 @@ def main():
     args = parser.parse_args()
 
     root = Path.cwd()
+
+    # PAT-ENV-001: Self-healing dual provisioning check
+    enforce_dual_provisioning(root)
+
     if args.staged:
         files = get_git_staged_files()
     else:

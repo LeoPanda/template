@@ -8,6 +8,8 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)（デプロイ統括・専任実行）
 - **システム総合レビュー担当**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **承認ゲート**: システム総合レビュー合格 (`RELEASE APPROVED`) ＋ ユーザー明示的承認必須
+- **【最重要】Stage/Phase 境界の厳格遵守 (PAT-SYS-008)**:
+  ユーザーから「終端処理」「クローズ」「テスト完了」等の語句を伴う指示があっても、本フェーズ（PHASE 7 本番デプロイ）および PHASE 8（GitHub push / タグ公開）などの外部影響・不可逆操作をユーザーの明示的指示・承認なしに先走って実行してはなりません。必ず各承認ゲートを順守してください。
 
 完成したシステムを本番環境へ安全にデプロイし、セキュリティ設定および稼働状態を自動検証してください。
 
@@ -28,7 +30,7 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
 
 ### 2. システム総合レビュー (`dev-review-system`) ゲートの通過確認
 - 手順書作成後、コンダクターは 🛡️ `qa-engineer` に `dev-review-system` を委譲します。
-- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、Profile A の `litestream run` スーパーバイザー起動保証、非root実行、起動時Alembic保証、内部ヘルスチェック (`/internal/health`, `/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
+- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、Profile A の正規スーパーバイザー起動保証 (`exec litestream replicate -config ... -exec "<cmd>"`)、非root実行、起動時Alembic保証、内部ヘルスチェック (`/internal/health`, `/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
 - **進行前提条件**:
   - 判定が **`RELEASE APPROVED`** であることを確認してください。
   - `RELEASE BLOCKED` の場合はデプロイを即時停止し、指摘されたセキュリティ・稼働課題を解消するまで進行してはなりません。

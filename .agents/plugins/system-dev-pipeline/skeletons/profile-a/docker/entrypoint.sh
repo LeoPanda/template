@@ -30,10 +30,10 @@ else
 fi
 cd /app
 
-# 3. Litestream スーパーバイザー起動 (SIGTERM シグナル伝播と最終 WAL フラッシュ同期保証)
+# 3. Litestream スーパーバイザー起動 (PAT-SYS-011: exec litestream replicate -config ... -exec "<cmd>")
 if [ -n "$LITESTREAM_BUCKET" ]; then
     echo "--> Starting Uvicorn under Litestream supervisor on port ${PORT:-8080}..."
-    exec litestream run -config /etc/litestream.yml -- uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"
+    exec litestream replicate -config /etc/litestream.yml -exec "uvicorn core.main:app --host 0.0.0.0 --port ${PORT:-8080}"
 else
     echo "--> Starting Uvicorn server standalone on port ${PORT:-8080}..."
     exec uvicorn core.main:app --host 0.0.0.0 --port "${PORT:-8080}"

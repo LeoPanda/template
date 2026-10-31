@@ -332,6 +332,8 @@ def cmd_complete_revision(args):
     state = load_state()
     rev = state.setdefault("revisions", {})
     rid = args.id or rev.get("active_revision_id")
+    if getattr(args, "version", None):
+        state["project_metadata"]["version"] = args.version
     history = rev.setdefault("history", [])
     history.append({
         "id": rid, "title": args.title or "機能改訂", "status": "COMPLETED",
@@ -341,30 +343,22 @@ def cmd_complete_revision(args):
     rev["current_revision_status"] = "IDLE"
     rev["active_revision_id"] = None
     save_and_render(state)
+    print(f"✅ 改訂完了: [{rid}] {args.title or '機能改訂'} (Version: {state.get('project_metadata', {}).get('version', '')})")
 
 def main():
     p = argparse.ArgumentParser(description="AI Harness Deterministic State Ledger Manager")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     p_init = sub.add_parser("init")
-    p_init.add_argument("--name", type=str)
-    p_init.add_argument("--profile", type=str)
-    p_init.add_argument("--version", type=str)
-
+    p_init.add_argument("--name", type=str); p_init.add_argument("--profile", type=str); p_init.add_argument("--version", type=str)
     p_phase = sub.add_parser("set-phase")
     p_phase.add_argument("phase", type=str)
-
     p_task = sub.add_parser("complete-task")
-    p_task.add_argument("--id", type=str, required=True)
-    p_task.add_argument("--keyword", type=str)
-
+    p_task.add_argument("--id", type=str, required=True); p_task.add_argument("--keyword", type=str)
     p_rev = sub.add_parser("record-review")
     p_rev.add_argument("--type", choices=["arch", "code", "system"], required=True)
     p_rev.add_argument("--verdict", type=str, required=True)
-    p_rev.add_argument("--critical", type=int)
-    p_rev.add_argument("--high", type=int)
-    p_rev.add_argument("--medium", type=int)
-    p_rev.add_argument("--low", type=int)
+    for lvl in ["critical", "high", "medium", "low"]: p_rev.add_argument(f"--{lvl}", type=int)
     p_rev.add_argument("--report", type=str)
 
     p_app = sub.add_parser("record-approval")
@@ -384,6 +378,7 @@ def main():
     p_crev = sub.add_parser("complete-revision")
     p_crev.add_argument("--id", type=str)
     p_crev.add_argument("--title", type=str)
+    p_crev.add_argument("--version", type=str)
 
     args = p.parse_args()
     cmds = {

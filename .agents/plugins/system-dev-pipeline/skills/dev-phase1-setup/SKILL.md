@@ -45,6 +45,9 @@ description: "新規システム開発プロジェクトの環境初期化を行
    *.pem
    *.key
    *.db
+
+   # Lockfiles whitelist (PAT-SYS-007: *.json 除外時も CI 再現性のため保護)
+   !package-lock.json
    ```
 
 ---
@@ -54,7 +57,10 @@ description: "新規システム開発プロジェクトの環境初期化を行
 2. 選定プロファイルに応じたスケルトン基盤を展開します（未存在時）：
    - **Profile A (ゴールデンパス)**: `skeletons/profile-a/`（`docker/`, `backend/`, `frontend/`）をコピーし、`chmod +x docker/entrypoint.sh` を付与。
    - **Profile D (ローカルデスクトップ型)**: `skeletons/profile-d/`（`src-tauri/`, `docker/`, `backend/`, `frontend/`）をコピー。
-3. `PLUGIN_DIR/templates/.env.template`（またはスケルトン同梱 `.env.example`）から `.env` を生成し、`VITE_ENABLE_MOCK=true` が初期設定されていることを確認します。
+3. **Dual Provisioning 原則（ペア生成義務化 / PAT-ENV-001）**:
+   - `PLUGIN_DIR/templates/.env.template` からプロジェクトルートへ、Git管理用の **`.env.example`** とローカル実行用の実体 **`.env`**（`VITE_ENABLE_MOCK=true`）の**両方を必ずペアで自動展開・同期**します。
+4. **品質管理設定ファイルの自動補完 (PAT-SYS-007)**:
+   - ブラウンフィールド改訂・既存プロジェクト移行時、既存ディレクトリが存在する場合でも、`backend/pyproject.toml` や `.editorconfig` 等の品質管理設定ファイルが欠落している場合はスケルトンから自動補完します。
 
 ---
 

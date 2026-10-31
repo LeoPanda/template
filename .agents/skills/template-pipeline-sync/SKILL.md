@@ -38,8 +38,8 @@ bash .agents/skills/template-pipeline-sync/scripts/sync_pipeline.sh --status
 | **原因B: ワークスペース先行**<br>*(Workspace Ahead)* | 本 `template` ワークスペースでの改訂作業による変更であり、グローバル側へは未反映の状態。 | ・改訂作業中: そのまま作業続行<br>・リリース反映時: `bash .agents/skills/template-pipeline-sync/scripts/sync_pipeline.sh --deploy` |
 | **原因C: 双方向変更**<br>*(Conflict)* | グローバル側での知見昇格と、ワークスペース側での編集が同一ファイルで競合している。 | 双方の Unified Diff を提示し、両方の変更を活かしたマージ案を承認後に適用する。 |
 | **原因D: 環境汚染・残骸**<br>*(Artifacts)* | `.orig` / `.rej` 残骸ファイル、または `~/.gemini/config/plugins/` 直下の重複バックアップフォルダが存在する。 | `bash .agents/skills/template-pipeline-sync/scripts/sync_pipeline.sh --cleanup` |
-| **共通ルール不一致**<br>*(Root Rules Drift)* | ワークスペースルートの `rules/AGENTS.md` 共通部（第1〜10節）とプラグイン正本に差分がある。 | `bash .agents/skills/template-pipeline-sync/scripts/sync_pipeline.sh --sync-root-rules` |
+| **ルール役割分離・重複混入**<br>*(Rules Separation)* | ワークスペースルートの `rules/AGENTS.md` にプラグイン共通規約が重複混入しているか、あるいはプラグイン側にローカル規約が混入している。 | 手動確認・重複規約の削除（ノイズ輻輳防止） |
 
 ### Step 3: 承認後の同期実行と完了検証
-1. ユーザーから承認を得たら、対応するオプション（`--backport` / `--deploy` / `--cleanup` / `--sync-root-rules`）を実行します。
+1. ユーザーから承認を得たら、対応するオプション（`--backport` / `--deploy` / `--cleanup`）を実行します。
 2. スクリプト実行後、出力末尾の再診断レポートが **`🎉 判定結果: [SYNCED]`** となり、`.git/pipeline_sync_stamp` が更新されたことを確認してから次の作業へ進んでください。

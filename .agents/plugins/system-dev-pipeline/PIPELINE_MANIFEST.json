@@ -1,7 +1,7 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.6.0",
-  "released_at": "2026-10-26T14:00:00+09:00",
+  "version": "2.6.1",
+  "released_at": "2026-10-31T09:00:00+09:00",
   "invariants_version": "1.0.0",
   "absorbed_patterns": [
     {
@@ -182,6 +182,125 @@
         "rules/AGENTS.md"
       ],
       "summary": "Central Knowledge Hub 全域における pattern_id 一意性保証と昇格時Fail-Fastバリデーション"
+    },
+    {
+      "pattern_id": "PAT-ENV-001",
+      "claim_ids": [
+        "CLAIM-20261026-bicycle-maintenance-PAT-ENV-001"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase1-setup/SKILL.md",
+        "skills/dev-git-release/SKILL.md",
+        "scripts/harness_guard.py"
+      ],
+      "summary": "環境変数テンプレート (.env.example) とローカル実体 (.env) のペア生成および同期保証ガードレール (Dual Provisioning)"
+    },
+    {
+      "pattern_id": "PAT-DOC-002",
+      "claim_ids": [
+        "CLAIM-20261027-bicycle-maintenance-PAT-DOC-002"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "templates/システム改訂ルール.md",
+        "skills/dev-doc-reviewer/SKILL.md",
+        "scripts/harness_guard.py"
+      ],
+      "summary": "ドキュメント正本バージョニング統一（タイトル個別バージョン排除）とワークスペースルール整合性ガード"
+    },
+    {
+      "pattern_id": "PAT-DOC-003",
+      "claim_ids": [
+        "CLAIM-20261028-bicycle-log-PAT-DOC-003"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-doc-reviewer/SKILL.md",
+        "scripts/harness_guard.py"
+      ],
+      "summary": "Mermaid ダイアグラムにおける特殊記号・括弧付きラベルのダブルクォート義務化およびコミット前機械遮断"
+    },
+    {
+      "pattern_id": "PAT-SYS-007",
+      "claim_ids": [
+        "CLAIM-20261028-bicycle-log-PAT-SYS-007"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skeletons/profile-a/backend/pyproject.toml",
+        "skeletons/profile-d/backend/pyproject.toml",
+        "rules/AGENTS.md",
+        "skills/dev-phase1-setup/SKILL.md",
+        "skills/dev-phase6-testing/SKILL.md"
+      ],
+      "summary": "FastAPI Ruff適合(B008, E402 ignore)、package-lock.json保護、シナリオテスト実行ディレクトリ非依存相対パス解決"
+    },
+    {
+      "pattern_id": "PAT-SYS-008",
+      "claim_ids": [
+        "CLAIM-20261028-bicycle-log-PAT-SYS-008"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase7-release/SKILL.md",
+        "skills/dev-phase8-rules/SKILL.md",
+        "scripts/state_manager.py"
+      ],
+      "summary": "フェーズ・ステージ境界厳格遵守（外部公開先走り抑止）および状態台帳完全性監査規約（complete-revision監査）"
+    },
+    {
+      "pattern_id": "PAT-SYS-009",
+      "claim_ids": [
+        "CLAIM-20261028-bicycle-log-PAT-SYS-009"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "agents/conductor.md"
+      ],
+      "summary": "コンダクターのコード・設計書直接編集原則禁止と専任サブエージェント委譲指差し確認"
+    },
+    {
+      "pattern_id": "PAT-SYS-010",
+      "claim_ids": [
+        "CLAIM-20261029-garden-log-PAT-SYS-010"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase6-testing/SKILL.md",
+        "agents/qa-engineer.md"
+      ],
+      "summary": "形式的トレーサビリティカバレッジの罠防止と3階層深層アサーション規範（構造・状態遷移・副作用波及）"
+    },
+    {
+      "pattern_id": "PAT-SYS-011",
+      "claim_ids": [
+        "CLAIM-20261029-garden-log-PAT-SYS-011"
+      ],
+      "absorbed_in_version": "2.6.1",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skeletons/profile-a/docker/entrypoint.sh",
+        "skills/dev-phase7-release/SKILL.md",
+        "skills/dev-review-system/SKILL.md",
+        "agents/conductor.md",
+        "templates/技術要件定義書.md"
+      ],
+      "summary": "Litestream スーパーバイザー起動コマンド正規構文標準化(exec litestream replicate ... -exec)と誤謬遮断"
     }
   ]
 }

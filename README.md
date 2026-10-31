@@ -146,7 +146,7 @@ flowchart TD
 │           ├── skeletons/               # 🧱 プロファイル別初期コードスケルトン (common, profile-a, profile-d)
 │           │   ├── common/.githooks/pre-commit # 🛡️ Hard Gate pre-commit フック
 │           │   ├── common/scripts/        # ⚙️ スケルトン同梱スクリプト (harness_guard, state_manager, etc.)
-│           │   ├── profile-a/docker/entrypoint.sh # litestream run 起動シーケンス
+│           │   ├── profile-a/docker/entrypoint.sh # Litestream スーパーバイザー起動シーケンス
 │           │   └── profile-d/backend/tests/conftest.py # temp_db 一時実ファイル動的プロビジョニング
 │           ├── skills/                  # ⚙️ カスタムスキル群（全19種）
 │           │   └── dev-metrics-collector/scripts/ # 📊 定量測定エンジン (4モジュール構成)

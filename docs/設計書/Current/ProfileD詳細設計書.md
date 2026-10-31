@@ -95,7 +95,7 @@ flowchart TB
     SecToken -.->|シークレット共有| SidecarMgr
     SecToken -.->|シークレット注入| UI
 
-    UI -->|3. ローカルHTTP REST/SSE (トークン検証)| APIClient
+    UI -->|"3. ローカルHTTP REST/SSE (トークン検証)"| APIClient
     APIClient --> TokenAuth
     TokenAuth --> FastAPI
     

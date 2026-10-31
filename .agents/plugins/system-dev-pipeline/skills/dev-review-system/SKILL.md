@@ -49,7 +49,7 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ### 第2層: システム展開プロファイル別適合監査
 - **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**:
   - IAP認証有効時、JWT署名検証（Google公開鍵による署名検証、aud/iss検証）が有効化されているか。
-  - Litestreamレプリケーションがスーパーバイザー起動方式（`exec litestream run -- ...`）によりバックグラウンドで安全に常駐監視されているか。
+  - Litestreamレプリケーションがスーパーバイザー起動方式（`exec litestream replicate -config ... -exec "<cmd>"`）によりバックグラウンドで安全に常駐監視されているか（`litestream run` 構文の禁止）。
   - 同期監視エンドポイント（`/api/internal/litestream/status`）が正しく稼働しているか。
   - Cloud Run 最大インスタンス数1（`max-instances=1`）が保証され、単一ライター保護が保たれているか。
   - SQLite WALモードおよびバッチマイグレーション（`render_as_batch=True`）の稼働保証。

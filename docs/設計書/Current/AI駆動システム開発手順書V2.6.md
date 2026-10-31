@@ -118,7 +118,7 @@ flowchart TD
 
 ### 3.7 PHASE 7: 本番リリース (Production Release)
 - **ユーザー指示**: 「PHASE 7 本番リリース作業を開始してください。」
-- **AI自律実行**: `本番適用作業手順書.md` 策定、`dev-review-system` 総合レビュー（Profile A では `litestream run` スーパーバイザー化確認）、本番デプロイ実行（`--quiet` ＋ `schedule` 監視）。
+- **AI自律実行**: `本番適用作業手順書.md` 策定、`dev-review-system` 総合レビュー（Profile A では正規スーパーバイザー起動 `exec litestream replicate ... -exec` 確認）、本番デプロイ実行（`--quiet` ＋ `schedule` 監視）。
 - **承認ゲート 5**: ユーザーによる本番稼働確認の承認。
 
 ### 3.8 PHASE 8: ルール化と Central Knowledge Hub 自己進化 (Knowledge & Handover)
