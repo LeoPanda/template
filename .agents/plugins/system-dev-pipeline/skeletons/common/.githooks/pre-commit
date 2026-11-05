@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Harness Pre-Commit Hook (HG-001 - HG-007)
+# AI Harness Pre-Commit Hook (HG-001 - HG-009)
 set -e
 
 if [ -f "scripts/harness_guard.py" ]; then

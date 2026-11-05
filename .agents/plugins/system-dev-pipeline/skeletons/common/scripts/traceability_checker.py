@@ -4,14 +4,16 @@ traceability_checker.py - Requirements Traceability Matrix (RTM) Verifier (Profi
 Enforces 100% requirements coverage from docs to design and tests, and checks negative test ratio.
 """
 import argparse
+import ast
 import os
 import re
 import sys
 from pathlib import Path
 
-REQ_PATTERN = re.compile(r"\[(REQ-(?:F|NF)\d+)\]")
+REQ_PATTERN = re.compile(r"\[(REQ-(?:F|NF)\d+(?:-\d+)?)\]")
 NEGATIVE_TEST_PATTERN = re.compile(r"(@test_type:\s*negative|abnormal|error|invalid|exception|fail|reject|boundary)", re.IGNORECASE)
 IGNORE_TEST_DIRS = {".git", "node_modules", "venv", ".venv", "__pycache__", "dist", "build", "coverage", ".agents"}
+TEST_FUNC_PATTERN = re.compile(r"^\s*(?:async\s+)?(?:def\s+test_|fn\s+test_)|^\s*(?:it|test)\(")
 
 def is_test_file(path: Path) -> bool:
     parts = set(path.parts)
@@ -76,6 +78,38 @@ def scan_design_docs(root: Path, reqs: dict[str, Requirement], req_file: Path | 
         except Exception:
             pass
 
+def check_python_test_validity(func_node: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[bool, str]:
+    """PAT-TEST-003: テスト関数のAST妥当性（トートロジー・アリバイテスト検知）"""
+    has_call = False
+    has_assert = False
+    tautology_assert = False
+
+    for node in ast.walk(func_node):
+        if isinstance(node, ast.Call):
+            func_name = ""
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                func_name = node.func.attr
+            if func_name not in ("print", "len", "str", "int", "bool"):
+                has_call = True
+        elif isinstance(node, ast.Assert):
+            has_assert = True
+            if isinstance(node.test, ast.Constant) and bool(node.test.value) is True:
+                tautology_assert = True
+            elif isinstance(node.test, ast.Compare):
+                if isinstance(node.test.left, ast.Constant) and len(node.test.comparators) == 1 and isinstance(node.test.comparators[0], ast.Constant):
+                    if node.test.left.value == node.test.comparators[0].value:
+                        tautology_assert = True
+
+    if tautology_assert:
+        return False, "自己完結型定数アサーション (assert True / 1==1)"
+    if not has_assert:
+        return False, "アサーションが存在しません"
+    if not has_call:
+        return False, "実コード・API・モジュール呼出を伴わないローカル自己完結テスト"
+    return True, "OK"
+
 def scan_test_artifacts(root: Path, reqs: dict[str, Requirement]) -> tuple[int, int]:
     test_files = []
     for ext in ["*.py", "*.ts", "*.tsx", "*.js", "*.rs"]:
@@ -98,10 +132,36 @@ def scan_test_artifacts(root: Path, reqs: dict[str, Requirement]) -> tuple[int, 
 
             # Count test cases & negative tests in test code
             if tf != plan_file:
-                for line in content.splitlines():
-                    if re.search(r"^\s*(def test_|it\(|test\()", line):
+                # Python の場合は AST でトートロジー検査
+                if tf.suffix == ".py":
+                    try:
+                        tree = ast.parse(content, filename=str(tf))
+                        for node in ast.walk(tree):
+                            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
+                                is_valid, reason = check_python_test_validity(node)
+                                if not is_valid:
+                                    print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{node.name} - {reason}", file=sys.stderr)
+                                    continue
+                                total_tests += 1
+                                # 異常系判定: docstring または関数名、ノード内の文字列
+                                func_text = ast.get_source_segment(content, node) or ""
+                                if NEGATIVE_TEST_PATTERN.search(node.name) or NEGATIVE_TEST_PATTERN.search(func_text):
+                                    negative_tests += 1
+                        continue
+                    except SyntaxError:
+                        pass
+
+                # TS/JS/Rust または AST パース失敗時のフォールバック
+                lines = content.splitlines()
+                for idx, line in enumerate(lines):
+                    if TEST_FUNC_PATTERN.search(line):
+                        # 簡易トートロジー検査
+                        next_chunk = "\n".join(lines[idx:idx+15])
+                        if "assert True" in next_chunk or "assert 1 == 1" in next_chunk or "expect(true).toBe(true)" in next_chunk:
+                            print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{line.strip()}", file=sys.stderr)
+                            continue
                         total_tests += 1
-                        if NEGATIVE_TEST_PATTERN.search(line):
+                        if NEGATIVE_TEST_PATTERN.search(line) or NEGATIVE_TEST_PATTERN.search(next_chunk):
                             negative_tests += 1
                     elif "@test_type: negative" in line:
                         negative_tests += 1

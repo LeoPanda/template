@@ -168,6 +168,18 @@ def save_metrics_json(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     now_iso = datetime.datetime.now(JST).isoformat(timespec="seconds")
 
+    cat_alias_map = {
+        "リソース効率": "resource",
+        "品質・堅牢性": "quality",
+        "ナレッジ進化": "evolution",
+        "ガバナンス": "governance",
+    }
+    category_scores_dict: Dict[str, Any] = {}
+    for name, c in scoring.categories.items():
+        category_scores_dict[name] = {"score": c.score, "weighted_score": c.weighted_score, "weight": c.weight}
+        if name in cat_alias_map:
+            category_scores_dict[cat_alias_map[name]] = c.weighted_score
+
     data = {
         "project_name": workspace_root.name,
         "collected_at": now_iso,
@@ -175,10 +187,10 @@ def save_metrics_json(
         "summary": {
             "total_score": scoring.total_score,
             "grade": scoring.grade,
-            "category_scores": {
-                name: {"score": c.score, "weighted_score": c.weighted_score, "weight": c.weight}
-                for name, c in scoring.categories.items()
-            },
+            "category_scores": category_scores_dict,
+            "total_tokens": transcript_data.total_tokens_consumed,
+            "total_tool_calls": transcript_data.tool_calls_total,
+            "net_loc": artifacts_data.git_net_loc_added,
         },
         "metrics_12": [
             {

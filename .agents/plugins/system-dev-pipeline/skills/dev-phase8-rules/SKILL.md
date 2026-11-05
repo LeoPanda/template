@@ -3,7 +3,7 @@ name: dev-phase8-rules
 description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md) の Knowledge Hub 投函、3段階意味的整合性監査、ask_question 承認による Local Overlay 即時再生成、Git本番リリース、および改訂運用ルールの適用を行うスキル。"
 ---
 
-# PHASE 8: メトリクス集計・Knowledge Hub 知見昇格と改訂管理体制への移行 V2.3
+# PHASE 8: メトリクス集計・Knowledge Hub 知見昇格と改訂管理体制への移行
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **連携スキル / ツール**:
@@ -25,7 +25,7 @@ description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md)
 - 以下のコマンドを実行して定量メトリクスを機械集計し、`metrics/development-metrics-summary.json` および `metrics/system_health_report.md` を生成してプロジェクト総合グレード (Grade S〜Critical) を報告します：
   ```bash
   PLUGIN_DIR="$([ -d "./.agents/plugins/system-dev-pipeline" ] && echo "./.agents/plugins/system-dev-pipeline" || echo "${HOME}/.gemini/config/plugins/system-dev-pipeline")"
-  python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py"
+  python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py" --all --sync-state
   ```
 
 ### 2. Wiki整理と標準化知見原票の起案・Inbox投函 (`wiki-compactor` & `wiki-proposer`)
@@ -54,8 +54,8 @@ description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md)
 ### 5. GitHub本番リリースおよび開発ブランチ刷新 (`dev-git-release`)
 - コンダクター専任で `dev-git-release` を実行し、`main` ブランチへの Squash Merge、バージョンタグ付与、Push、および新規 `feature` ブランチの再作成を行います。
 
-### 6. システム改訂ルールの配置と状態管理の更新
-- `templates/システム改訂ルール.md` を `rules/システム改訂ルール.md` に配置し、`AGENTS.md` / `GEMINI.md` / `.agents/rules/system-revision.md`（修正後の `docker compose down` ＋ `up --build -d` 徹底、`LOCAL_FEEDBACK_RULES.md` 参照フック、`dev-git-release` 実行を含む）を適用します。
-- **改訂サイクル完了時の機械的・意味的整合性監査 (PAT-SYS-008)**:
-  以降の機能改訂完了時（`complete-revision` 実行時）、コンダクターは `app_version`、`current_branch`、`decisions`、`open_questions` の完全一致および専任サブエージェントへの委譲履歴（セルフ直接編集の抑止）を指差し確認し、整合性を検証してからクローズしてください。
+### 6. システム改訂運用基準書の確認と改訂管理体制への移行
+- `docs/システム改訂運用基準書.md` を確認し、標準改訂フェーズ（`REV-1`〜`REV-5`）に基づく運用体制へ移行します。
+- **改訂サイクル完了時の機械的・意味的整合性監査**:
+  以降の機能改訂完了時（`complete-revision` 実行時）、コンダクターは `state_manager.py complete-revision` の Invariants Gate（成果物実在、メトリクス算出済み、未処理知見ゼロ、ブランチ整合性）を機械検証し、未達時は自動遮断されます。
 - `python3 scripts/state_manager.py set-phase PRODUCTION_ACTIVE` を実行してステータスを本番稼働中へ更新し、改訂管理体制への移行を完了してください。

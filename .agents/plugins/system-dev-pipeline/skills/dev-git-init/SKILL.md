@@ -54,14 +54,14 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
 ### 4. 初期設定ファイルのステージングと基点コミット
 1. `.gitignore` が適切に設定されているか確認してください：
    - `.env`, `node_modules/`, `__pycache__/`, `.DS_Store`
-   - **`wiki/`**, **`metrics/`** (知見収集・メトリクス領域のGit除外)
-2. `PROJECT_STATE.md`, `TEMPLATE_PROMOTIONS.md`, `docs/` 配下を含む初期構成ファイルをステージングしてください（※ `wiki/`, `metrics/` は `.gitignore` により自動除外されます）。
+   - **`wiki/`**, **`metrics/`**, **`promotions/`** (知見収集・メトリクス領域のGit除外)
+2. `project_state.json`, `PROJECT_STATE.md`, `TEMPLATE_PROMOTIONS.md`, `docs/` 配下を含む初期構成ファイルをステージングしてください（※ `wiki/`, `metrics/`, `promotions/` は `.gitignore` により自動除外されます）。
    ```bash
    git add .
    ```
 3. `main` ブランチ上で初期基点コミットを作成してください。
    ```bash
-   git commit -m "feat: initial project setup (V2.2 pipeline)"
+   git commit -m "feat: initial project setup"
    ```
 
 ### 5. 開発ブランチ `feature` の作成と移動
@@ -70,5 +70,5 @@ PHASE 4の環境構築およびシステム初期実装完了時に発動し、G
    git checkout -b feature
    ```
 
-### 6. 状態管理（PROJECT_STATE.md）との同期
-1. `PROJECT_STATE.md` の「4. システム・インフラ・Git状態」に現在のブランチ（`feature`）、最新コミットハッシュ、リモートURLを記録してください。
+### 6. 状態管理（Single Writer 原則）との同期
+1. `python3 scripts/state_manager.py complete-task --id P4-T02` を実行し、Git初期化の完了を状態台帳へ記録してください。

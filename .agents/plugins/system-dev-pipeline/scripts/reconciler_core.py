@@ -57,7 +57,7 @@ class KnowledgeHubReconciler:
 
     def init_hub(self) -> None:
         """Knowledge Hub ディレクトリおよび初期状態ファイルのプロビジョニング"""
-        for sub in ["inbox", "pending_approval", "overlay/skills", "active_claims", "archive/upstreamed", "suspended", "rejected"]:
+        for sub in ["inbox", "pending_approval", "overlay/skills", "active_claims", "archive/upstreamed", "archive/consolidated", "suspended", "rejected"]:
             (self.hub_dir / sub).mkdir(parents=True, exist_ok=True)
 
         core_ver = self._get_core_version()
@@ -105,9 +105,39 @@ class KnowledgeHubReconciler:
         meta["distilled_rules"] = rules
         return meta
 
+    def clean_inbox_duplicates(self) -> None:
+        """inbox/ 内で既に active_claims/ や archive/ に存在する重複原票を自動整理"""
+        inbox_dir = self.hub_dir / "inbox"
+        active_dir = self.hub_dir / "active_claims"
+        archive_dir = self.hub_dir / "archive" / "upstreamed"
+        if not inbox_dir.exists():
+            return
+
+        # 既存の pattern_id, claim_id を収集
+        existing_pids = set()
+        existing_cids = set()
+        for d in (active_dir, archive_dir):
+            if d.exists():
+                for cp in d.glob("CLAIM-*.md"):
+                    existing_cids.add(cp.stem)
+                    txt = cp.read_text(encoding="utf-8")
+                    m = re.search(r'^pattern_id:\s*["\']?([^"\']+)["\']?', txt, re.MULTILINE)
+                    if m and m.group(1).strip():
+                        existing_pids.add(m.group(1).strip())
+
+        for cp in sorted(inbox_dir.glob("CLAIM-*.md")):
+            cid = cp.stem
+            txt = cp.read_text(encoding="utf-8")
+            m = re.search(r'^pattern_id:\s*["\']?([^"\']+)["\']?', txt, re.MULTILINE)
+            pid = m.group(1).strip() if m else ""
+            if cid in existing_cids or (pid and pid in existing_pids):
+                print(f"🧹 [Duplicate Clean] inbox 内の重複原票を自動削除しました: {cp.name} ({pid})")
+                cp.unlink()
+
     def rebuild_overlay(self) -> None:
         """active_claims/ から LOCAL_FEEDBACK_RULES.md をクリーン再生成"""
         self.init_hub()
+        self.clean_inbox_duplicates()
         active_dir = self.hub_dir / "active_claims"
         core_ver = self._get_core_version()
         state = {"base_core_version": core_ver, "active_overlay_claims": [], "upstreamed_history": []}
@@ -184,6 +214,7 @@ class KnowledgeHubReconciler:
     def run_upgrade(self) -> None:
         """新 Immutable Core と照合し、吸収済原票の自動退役を実行"""
         self.init_hub()
+        self.clean_inbox_duplicates()
         if not self.manifest_path.exists():
             print("❌ PIPELINE_MANIFEST.json が見つかりません。", file=sys.stderr)
             sys.exit(1)

@@ -1,4 +1,4 @@
-# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.6.1)
+# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V2.6.2)
 
 本プロジェクトおよび開発パイプラインにおいては、以下の開発・運用規約に従うものとする。
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 2. 5大エージェント協調モデルと責務分担 (V2.6.1)
+## 2. 5大エージェント協調モデルと責務分担 (V2.6.2)
 本システムは、以下の5大エージェントによる明確な関心事分離とオーケストレーション体制で自律推進される。
 
 1. 👑 **プロジェクトコンダクター (`conductor`) [Main Agent]**:
@@ -43,14 +43,14 @@
 5. 🛡️ **品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) [Subagent]**:
    - **Hard Gate & 3大レビュー厳格監査**:
      - 基本設計レビュー (`dev-review-arch`): `traceability_checker.py --mode design` PASS 必須。
-     - コード品質レビュー (`dev-review-code`): `harness_guard.py --all` PASS 必須（250/400行・直書きモック排除）。
-     - システム総合レビュー (`dev-review-system`): 本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py --mode full` PASS 必須（異常系比率20%以上、3階層深層アサーション監査）。
+     - コード品質レビュー (`dev-review-code`): `harness_guard.py --all` PASS 必須（250/400行・直書きモック排除・機能等価性マトリクス監査）。
+     - システム総合レビュー (`dev-review-system`): 本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py --mode full` PASS 必須（異常系比率20%以上、3階層深層アサーション監査、実データ一気通貫E2E検証）。
    - ブラウザ感覚センサー（Chrome DevTools MCP / A11y / コンソールエラーゼロ）検証、RCA即時記録（`wiki-maintainer`）。
    - **【コード直接改変禁止】** システムコードに不具合を発見した場合は勝手に修正せず、調査結果とDiff案をコンダクターへ報告する。
 
 ---
 
-## 3. 構造化状態台帳と Single Writer 原則 (V2.6.1 Hybrid State Ledger)
+## 3. 構造化状態台帳と Single Writer 原則 (V2.6.2 Hybrid State Ledger)
 - 状態管理は、機械正本 `project_state.json` と自動生成ビュー `PROJECT_STATE.md` を1対1同期する。
 - 更新権限は **👑 プロジェクトコンダクター専任** とし、`state_manager.py` 経由で原子的・決定論的に更新する。サブエージェントによる直接編集や手動改ざんはハッシュ不一致により遮断される。
 
@@ -62,8 +62,9 @@
 ### 4.1 第1層: 定常的コア設計規範 (全プロファイル共通)
 1. **Hard Gate 物理遮断**: Git `pre-commit` フックおよび CI ゲートで `harness_guard.py` を実行し、250/400行制限、直書きモック、生SQL、AST違反をコミット前に機械遮断する。
 2. **要件トレーサビリティ機械検証 & 3階層深層アサーション**:
-   - 要件定義 `REQ-*` から設計・テストコードまでの 100% カバレッジと異常系テスト比率（20%以上）を `traceability_checker.py` で機械検証する。
-   - 単なるDOM存在確認（浅いアサーション）を排除し、「第1層（構造検証）」「第2層（状態・属性遷移検証）」「第3層（副作用・連動描画検証）」を満たすテストのみを有効カウント対象とする。
+   - 要件定義 `REQ-*`（サブ要件ID `[REQ-F01-01]` 等を含む）から設計・テストコードまでの 100% カバレッジと異常系テスト比率（20%以上）を `traceability_checker.py` で機械検証する。
+   - 単なるDOM存在確認やローカル変数自己アサート等の「自己完結型トートロジー・テスト（アリバイテスト）」をAST静的解析で機械遮断し、必ず実コード・API・DOM操作の返却値や副作用を検証する「第1層（構造検証）」「第2層（状態・属性遷移検証）」「第3層（副作用・連動描画検証）」を満たすテストのみを有効カウント対象とする。
+   - 多言語・非同期テスト検出（Python `async def test_` / Rust `fn test_` / TS `it(`, `test(`）に対応し、実DB/ファイルIOテスト時はテンポラリディレクトリ＋UUIDでテスト間干渉を完全分離する。
 3. **ブラウザ感覚センサー**: Chrome DevTools MCP により実ブラウザのコンソールエラー 0件、WCAG AA コントラスト比（4.5:1）、A11yツリーを自動計測・検証する。
 4. **型定義自動同期**: OpenAPI ➔ TypeScript Codegen 完全利用。
 5. **シークレット厳格バリデーション & Dual Provisioning 原則**:
@@ -78,11 +79,12 @@
    - シナリオテストコードは実行カレントディレクトリ非依存パス（`ROOT_DIR = Path(__file__).resolve().parent.parent.parent`）を使用する。
 
 ### 4.2 第2層: システム展開プロファイル (Profile A〜E)
+- **5大適合性診断と2択提案プロトコル**: プロファイル選定時は、インフラ要件・UI要件・運用コスト等に基づき適合性診断を実施し、最適な主案と代替案の2択を提示して合意形成する。
 - **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**: Cloud Run (`max-instances=1`) + Litestream + SQLite(WAL) + Alembic + IAP JWT 二重防御 + React SPA + Tailwind CSS + MSW。
   - **Litestream スーパーバイザー起動構文**: コンテナ起動スクリプト（`entrypoint.sh`）では必ず正規構文 `exec litestream replicate -config /etc/litestream.yml -exec "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"` を使用すること（誤った `run` 構文の禁止）。
 - **Profile B (Web SSR / フルマネージドRDB型)**: Next.js/Nuxt SSR または FastAPI + Cloud SQL (PostgreSQL) + Alembic。
 - **Profile C (静的MPA / 超軽量ツール型)**: FastAPI + Jinja2 + HTMX / 単一バイナリCLI。
-- **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + 二段階ハイブリッド運用。
+- **Profile D (PCローカルデスクトップアプリ型)**: Tauri v2 + Local SQLite + Frameless TitleBar + 二段階ハイブリッド運用。本番ビルド時は `VITE_ENABLE_MOCK=false` を二重防御し、結合テスト時はWALモード一時実ファイルDBを使用する。
 - **Profile E (AI Agent Skill / PKM 自動化・CLI型)**: Zero-Dependency Python 3（標準ライブラリのみ） + アトミックI/O + 2系統分離設計 + テストコード必須。
 
 ---
@@ -90,12 +92,12 @@
 ## 5. 3大レビュー必須通過規約
 以下の3大レビューゲートにおいて合否判定を満たさない限り、次のフェーズへ進行してはならない。
 1. **基本設計レビュー (`dev-review-arch`) [PHASE 3 完了ゲート]**: 判定 `PASS` または `CONDITIONAL PASS` 必須。
-2. **コード品質レビュー (`dev-review-code`) [PHASE 5.5 完了ゲート]**: 判定 `CLEAN` 必須（`harness_guard.py` PASS 必須）。
-3. **システム総合レビュー (`dev-review-system`) [PHASE 7 リリース直前ゲート]**: 判定 `RELEASE APPROVED` 必須（本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py` PASS 必須）。
+2. **コード品質レビュー (`dev-review-code`) [PHASE 5.5 完了ゲート]**: 判定 `CLEAN` 必須（`harness_guard.py` PASS 必須）。設計書との機能等価性マトリクスを監査し、プレースホルダーや縮退実装（機能オミット・空実装）を検出した場合は即座に `BLOCKED` 判定とする。
+3. **システム総合レビュー (`dev-review-system`) [PHASE 7 リリース直前ゲート]**: 判定 `RELEASE APPROVED` 必須（本番モックOFF二重防御、IAP JWT有効化、`traceability_checker.py` PASS 必須）。PHASE 6/7 においてはモックOFF・実データ一気通貫E2Eユーザージャーニー検証を必須とする。
 
 ---
 
-## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.6.1)
+## 6. ナレッジ境界・二段階進化サイクルと Context Isolation 原則 (V2.6.2)
 1. **試行錯誤・RCAのローカル固定蓄積**: エラー・手戻りのRCAは、**必ずカレントプロジェクト配下の `./wiki/`** に蓄積する。
 2. **二層分離 (Two-Tier Separation) と二段階進化**:
    - **Tier 1 (プロジェクト固有仕様)**: `./wiki/patterns/local/` に記録し、各ゲートで `docs/` および台帳へ逆同期して完結。
@@ -135,7 +137,12 @@
 1. **docs/ 運用ルール**:
    - `docs/設計書/` と `docs/検討課題/` に完全分離し、`docs/設計書/Current/` を唯一の正（Single Source of Truth）とする。
    - 正本設計書タイトルからは個別バージョン番号（`V1.x`）を排除し、システム SemVer（`APP_VERSION`）で一元管理する。
-   - 改定履歴テーブルには「対象システムバージョン」および「改訂依頼番号（`MAJOR.MINOR.xxx`）」を必須記録項目としてバインドする。
-2. **改訂ライフサイクル (5段階)**:
-   - 初期開発完了後の機能追加・Hotfixは、`state_manager.py start-revision`（起票）➔ 差分要件/設計（`REQ-*` ＆ RTM）➔ 差分実装（Hard Gate pre-commit）➔ 回帰/感覚センサー検証（RTM full）➔ `state_manager.py complete-revision`（完了）のサイクルを厳守する。
-   - 改訂サイクル完了時（`complete-revision` 実行時）、エージェントは `app_version`、`current_branch`、`decisions`、`open_questions` の整合性および専任サブエージェントへの委譲履歴（セルフ直接編集の抑止）を指差し確認し、整合性を機械検証してからクローズする。
+   - 改訂運用方針および詳細手順は `docs/システム改訂運用基準書.md` を参照する。
+2. **改訂ライフサイクル (REV-1〜REV-5 標準パイプライン)**:
+   - 初期開発完了後の機能追加・Hotfixは、`state_manager.py start-revision` による計画スケルトン自動展開を出発点とし、以下の5段階標準改訂パイプラインを厳守する:
+     - `REV-1`: 要件・設計精査（差分要件 `REQ-*` & RTM設計カバレッジ 100%）
+     - `REV-2`: 実装・静的検証（Hard Gate `harness_guard.py --all` PASS）
+     - `REV-3`: テスト・視認レビュー（RTM full、深層アサーション、感覚センサー検証）
+     - `REV-4`: 本番総合監査・成果物ビルド（コード/システム総合レビュー合格、本番成果物ビルド）
+     - `REV-5`: メトリクス・知見昇格・リリース（定量メトリクス集計、知見昇格、Invariants Gate 通過確認）
+   - 改訂クローズ時、`state_manager.py complete-revision` の Invariants Gate（成果物実在、メトリクス算出済み、未処理知見ゼロ、ブランチ整合性）を機械検証し、未達時は自動遮断する。

@@ -3,7 +3,7 @@ name: wiki-proposer
 description: "PHASE 8 において Tier 2 汎用Wikiパターンから行番号非依存の標準化知見原票 (CLAIM-*.md) を生成し、Central Knowledge Hub (~/.gemini/knowledge-hub/inbox/) への投函と提示サマリ更新を行うスキル。"
 ---
 
-# 標準化知見原票起案・投函 (wiki-proposer) スキル V2.5
+# 標準化知見原票起案・投函 (wiki-proposer) スキル
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **委譲先 (監査時)**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Semantic Auditor)
@@ -18,7 +18,7 @@ description: "PHASE 8 において Tier 2 汎用Wikiパターンから行番号�
 
 ---
 
-## 2. V2.3 における重要原則（Patch-Free & State/Lineage 分離）
+## 2. 重要原則（Patch-Free & State/Lineage 分離）
 1. **Unified Diff（`.patch`）および個別 `PURPOSE.md` 生成の完全廃止**:
    - 行番号ズレによる競合（Hunk Conflict）と管理分散を根絶するため、`.patch` ファイルや `skills/*/PURPOSE.md` は一切生成しない。
 2. **標準化知見原票（Knowledge Claim MD）への統一**:
@@ -32,14 +32,14 @@ description: "PHASE 8 において Tier 2 汎用Wikiパターンから行番号�
 
 ### Step 1: パターンの蒸留と一般化・採番 (Spoke Gate & Global ID Resolution)
 1. `./wiki/patterns/universal/` の Tier 2 パターンを精査し、特定案件のディレクトリ名・テーブル名・固有API名などの固有名詞を排除して、全案件（または該当プロファイル全般）で通用する抽象ルールへと蒸留する。
-2. **パターンIDのグローバル一意性確定**: 新規採番時は、プロジェクトローカルの `wiki/` だけでなく、必ず Central Knowledge Hub（`~/.gemini/knowledge-hub/` の `active_claims/` および `archive/upstreamed/`）に登録済みの全原票の `pattern_id` を走査し、全環境で未使用の最新連番を確定・採番する（ID衝突の未然防止）。
+2. **パターンIDのグローバル一意性確定**: 新規採番時は、プロジェクトローカルの `wiki/` だけでなく、必ず Central Knowledge Hub（`~/.gemini/knowledge-hub/` の `inbox/`, `active_claims/`, `archive/upstreamed/`）に登録済みの全原票の `pattern_id` を走査し、全環境で未使用の最新連番を確定・採番する（重複・ID衝突の未然防止）。
 
 ### Step 2: 標準化知見原票 (`CLAIM-*.md`) の生成と投函
 以下の標準フォーマットに従い、`./promotions/CLAIM-{YYYYMMDD}-{PROJECT_SLUG}-{PAT_ID}.md` に控えを出力するとともに、環境共通の `~/.gemini/knowledge-hub/inbox/`（未初期化の場合は `pipeline-reconciler.sh --init-hub` を実行）へ投函（コピー）する。
 
 ```markdown
 ---
-schema_version: "2.5.0"
+schema_version: "2.6.2"
 claim_id: "CLAIM-{YYYYMMDD}-{PROJECT_SLUG}-{PAT_ID}"
 pattern_id: "{PAT_ID}"
 title: "知見タイトル"

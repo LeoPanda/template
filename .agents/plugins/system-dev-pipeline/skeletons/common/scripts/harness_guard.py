@@ -94,7 +94,7 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                                             hint="DTOやサービス層へモジュールを物理分割してください。"))
 
     # HG-002: Direct mock in production code
-    if any(norm.startswith(p) for p in ["src/components/", "src/pages/", "src/hooks/", "frontend/src/components/", "frontend/src/pages/"]) and "src/mocks/" not in norm and not is_test:
+    if any(norm.startswith(p) for p in ["src/components/", "src/pages/", "src/hooks/", "src/services/", "frontend/src/components/", "frontend/src/pages/", "frontend/src/hooks/", "frontend/src/services/"]) and "src/mocks/" not in norm and not is_test:
         if MOCK_CALL_PATTERN.search(content):
             violations.append(Violation("HG-002", "BLOCK", norm, "直書きモック識別子 (mockUsers/dummyData/MOCK_*) を検出",
                                         hint="MSW (src/mocks/) ハンドラーへ移行し、コンポーネントからは直接参照しないでください。"))
@@ -110,14 +110,14 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                                             hint="ファイル間の相対パス (例: ../設計書.md) に書き換えてください。"))
 
     # HG-004: Raw SQL DDL in BE
-    if norm.startswith("backend/app/") and norm.endswith(".py") and "alembic/" not in norm:
+    if norm.startswith("backend/") and norm.endswith(".py") and not any(k in norm for k in ["/tests/", "/alembic/", "/migrations/", "/.venv/"]):
         for idx, line in enumerate(lines, 1):
             if RAW_DDL_PATTERN.search(line) and not line.strip().startswith("#"):
                 violations.append(Violation("HG-004", "BLOCK", norm, "生SQL DDL (CREATE/ALTER/DROP TABLE) を検出", line_no=idx,
                                             hint="SQLAlchemyモデル定義およびAlembicマイグレーションを使用してください。"))
 
     # HG-005: AST fitness for BE
-    if norm.startswith("backend/app/") and norm.endswith(".py"):
+    if norm.startswith("backend/") and norm.endswith(".py") and not any(k in norm for k in ["/tests/", "/alembic/", "/migrations/", "/.venv/"]):
         violations.extend(check_ast_fitness(norm, content))
 
     # HG-006: Daylight theme contrast static warning
@@ -128,7 +128,7 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                                             hint="セマンティックデザイントークンまたは明暗ペア指定 (例: bg-blue-50 text-blue-800 dark:...) を使用してください。"))
 
     # HG-007: Plaintext secrets & placeholders
-    if not norm.endswith((".example", ".sample", ".schema.json", ".template")) and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/")) and norm != "scripts/harness_guard.py":
+    if not norm.endswith((".example", ".sample", ".schema.json", ".template")) and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/", "doc_samples/")) and norm != "scripts/harness_guard.py":
         for pattern, label in SECRET_PATTERNS:
             for idx, line in enumerate(lines, 1):
                 if pattern.search(line) and not line.strip().startswith("#"):
@@ -167,7 +167,7 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
     except SyntaxError:
         return violations
 
-    is_router = "/routers/" in norm or norm.startswith("backend/app/routers")
+    is_router = any(k in norm for k in ["/routers/", "/api/"]) or norm.startswith(("backend/app/routers", "backend/app/api", "backend/routers", "backend/api"))
     dto_count = 0
 
     for node in ast.walk(tree):

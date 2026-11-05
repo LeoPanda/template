@@ -3,11 +3,11 @@ name: dev-metrics-collector
 description: "開発プロセスにおける定量メトリクス（Token/時間/ツール/レビュー/テスト）を機械集計し、健全性スコアおよび診断レポートを出力するスキル。"
 ---
 
-# 定量測定・メトリクス集計 (dev-metrics-collector) スキル V2.5
+# 定量測定・メトリクス集計 (dev-metrics-collector) スキル
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **適用契機**: 各フェーズ完了時、改訂ターン完了時、PHASE 8 総合診断
-- **正本設計書**: [docs/設計書/Current/定量測定・フィードバック設計書V2.5.md](../../../../../docs/設計書/Current/定量測定・フィードバック設計書V2.5.md)
+- **正本設計書**: [docs/設計書/Current/定量測定・フィードバック設計書.md](../../../../../docs/設計書/Current/定量測定・フィードバック設計書.md)
 
 ---
 
@@ -26,18 +26,14 @@ LLM による手作業での推測・捏造（ハルシネーション）を完�
 コンダクターは、ローカルまたはグローバルのプラグインディレクトリを自動解決し、以下の標準コマンドシーケンスを実行してください。
 
 ```bash
-# 基本実行: プロジェクトに紐づく過去の全会話セッションを通算集計 (ローカル/グローバル自動解決)
+# 基本実行: プロジェクト全セッションを通算集計し、状態台帳へ自動同期
 PLUGIN_DIR="$([ -d "./.agents/plugins/system-dev-pipeline" ] && echo "./.agents/plugins/system-dev-pipeline" || echo "${HOME}/.gemini/config/plugins/system-dev-pipeline")"
 
-python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py"
+python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py" --all --sync-state
 ```
 
 #### 用途別実行オプション
-- **直近の 1 セッションのみを集計したい場合**:
-  ```bash
-  python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py" --single-session
-  ```
-- **過去プロジェクト（V2.3以前等）でトランスクリプトがない場合の遡及分析**:
+- **過去プロジェクトでトランスクリプトがない場合の遡及分析**:
   ```bash
   python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py" --retroactive
   ```
@@ -63,7 +59,7 @@ python3 "${PLUGIN_DIR}/skills/dev-metrics-collector/scripts/metrics_collector.py
 
 ### Step 3: PROJECT_STATE.md 定量サマリの即時同期
 
-スクリプト実行完了後、コンダクターは `metrics/development-metrics-summary.json` から主要数値を読み取り、`PROJECT_STATE.md` の「プロジェクト定量メトリクスサマリ」テーブルおよびヘッダー更新日時を即時更新してください（Single Writer原則）。
+`--sync-state` オプションにより、集計結果は `state_manager.py sync-metrics` を経由して `project_state.json` および `PROJECT_STATE.md` へ決定論的に即時同期されます（Single Writer原則）。手動で Markdown を直接編集してはなりません。
 
 ---
 

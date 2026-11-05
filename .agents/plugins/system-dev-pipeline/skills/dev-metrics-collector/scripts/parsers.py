@@ -175,15 +175,26 @@ def parse_single_transcript(transcript_path: Path, debug: bool = False) -> Singl
                             previous_tool_signature = sig
 
                 usage = step.get("usage") or step.get("token_usage") or {}
-                if isinstance(usage, dict):
-                    inp = usage.get("input_tokens") or usage.get("prompt_tokens") or 0
-                    cache_read = usage.get("cache_read_input_tokens") or usage.get("cached_content_token_count") or 0
-                    out = usage.get("output_tokens") or usage.get("candidates_token_count") or 0
-                    total_input_tokens += inp
-                    total_cache_read_tokens += cache_read
-                    total_output_tokens += out
-                    if inp > 0:
-                        last_context_tokens = inp + cache_read
+                if not isinstance(usage, dict):
+                    usage = {}
+
+                # 1. step 直下のキー（Antigravity 標準ログ仕様）を最優先で探索
+                # 2. usage / token_usage 辞書（旧形式・外部SDK互換）を二重フォールバックで探索
+                inp = step.get("input_tokens") or usage.get("input_tokens") or usage.get("prompt_tokens") or 0
+                cache_read = (
+                    step.get("cache_read_tokens")
+                    or step.get("cache_read_input_tokens")
+                    or usage.get("cache_read_input_tokens")
+                    or usage.get("cached_content_token_count")
+                    or 0
+                )
+                out = step.get("output_tokens") or usage.get("output_tokens") or usage.get("candidates_token_count") or 0
+
+                total_input_tokens += inp
+                total_cache_read_tokens += cache_read
+                total_output_tokens += out
+                if (inp + cache_read) > 0:
+                    last_context_tokens = inp + cache_read
 
     except OSError as e:
         if debug:

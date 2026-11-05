@@ -3,12 +3,12 @@ name: dev-phase7-release
 description: "PHASE 7 本番リリースフェーズ。システム総合レビュー (dev-review-system) の合格確認、本番適用作業手順書の生成、本番デプロイ実行、Litestream同期監視、セキュリティ設定の検証を行う。"
 ---
 
-# PHASE 7: 本番環境へのリリースと検証 V2.5
+# PHASE 7: 本番環境へのリリースと検証
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)（デプロイ統括・専任実行）
 - **システム総合レビュー担当**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **承認ゲート**: システム総合レビュー合格 (`RELEASE APPROVED`) ＋ ユーザー明示的承認必須
-- **【最重要】Stage/Phase 境界の厳格遵守 (PAT-SYS-008)**:
+- **【最重要】Stage/Phase 境界の厳格遵守**:
   ユーザーから「終端処理」「クローズ」「テスト完了」等の語句を伴う指示があっても、本フェーズ（PHASE 7 本番デプロイ）および PHASE 8（GitHub push / タグ公開）などの外部影響・不可逆操作をユーザーの明示的指示・承認なしに先走って実行してはなりません。必ず各承認ゲートを順守してください。
 
 完成したシステムを本番環境へ安全にデプロイし、セキュリティ設定および稼働状態を自動検証してください。
@@ -26,11 +26,11 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
   障害発生時の切り戻しコマンドを必ず記載してください：
   - クラウドサービスのリビジョンロールバック（例: `gcloud run services update-traffic ...`）
   - Alembic DBマイグレーション切り戻し（`alembic downgrade -1` または特定リビジョンへのダウングレード）
-  - Profile Aの場合: LitestreamによるGCS/S3バックアップからのSQLite DB復元手順（`litestream restore -o /app/data/app.db gs://...`）
+  - Profile Aの場合: LitestreamによるGCS/S3バックアップからのSQLite DB復元手順（`litestream restore -o /data/app.db gs://...`）
 
 ### 2. システム総合レビュー (`dev-review-system`) ゲートの通過確認
 - 手順書作成後、コンダクターは 🛡️ `qa-engineer` に `dev-review-system` を委譲します。
-- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、Profile A の正規スーパーバイザー起動保証 (`exec litestream replicate -config ... -exec "<cmd>"`)、非root実行、起動時Alembic保証、内部ヘルスチェック (`/internal/health`, `/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
+- 🛡️ `qa-engineer` は平文シークレットゼロ、本番モック排除二重防御 (`VITE_ENABLE_MOCK=false`)、Profile A の正規スーパーバイザー起動保証 (`exec litestream replicate -config ... -exec "<cmd>"` / `litestream run` 排除)、非root実行、起動時Alembic保証、内部ヘルスチェック (`/api/internal/health`, `/api/internal/litestream`)、IAM/IAPポリシー、ロールバック手順の完全性を監査し、`docs/plans/システム総合レビュー結果報告書.md` を出力します。
 - **進行前提条件**:
   - 判定が **`RELEASE APPROVED`** であることを確認してください。
   - `RELEASE BLOCKED` の場合はデプロイを即時停止し、指摘されたセキュリティ・稼働課題を解消するまで進行してはなりません。
@@ -51,7 +51,7 @@ description: "PHASE 7 本番リリースフェーズ。システム総合レビ�
   1. 認証の `IAM` および `IAP` が双方有効化されているか（Profile A）。
   2. Context-aware アクセスポリシー画面にて `Principal` 列に対象アクセスユーザー（メールアドレス）が正しく付与されているか。
   3. `AllUsers` アクセス権が適切に削除されているか。
-  4. 内部監視エンドポイント `/internal/health` および `/internal/litestream` への疎通確認。
+  4. 内部監視エンドポイント `/api/internal/health` および `/api/internal/litestream` への疎通確認。
   5. Litestream の初回レプリケーション完了および同期ラグの正常性確認。
 - 本番公開URLでの画面疎通テストおよび主要機能の動作検証を実施してください。
 

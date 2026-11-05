@@ -1,4 +1,4 @@
-# コア不変原則カタログ (Core Invariants Catalog V2.3)
+# コア不変原則カタログ (Core Invariants Catalog V2.6.2)
 
 本ファイルは、`system-dev-pipeline` の品質・セキュリティ・自律統制の根幹をなす **「絶対不可侵の設計原則（Core Invariants: INV-01 〜 INV-10）」** を定義する正本である。
 知見フィードバック原票（`CLAIM-*.md`）の意味的整合性監査（Stage 1: Invariants Audit）において、以下のいずれかの原則を無効化・バイパス・緩和しようとする提案は、理由を問わず即座に **`REJECTED`（自動棄却）** とする。
@@ -9,7 +9,7 @@
 
 | ID | 原則名 | 絶対不可侵の制約内容（違反・弱体化は即座に `REJECTED`） |
 | :--- | :--- | :--- |
-| **INV-01** | **Single Writer 原則** | `PROJECT_STATE.md` の作成・更新権限は 👑 `conductor` のみが保持する。いかなるサブエージェントによる直接編集も許可してはならない。 |
+| **INV-01** | **Single Writer 原則** | 構造化状態台帳（機械正本 `project_state.json` および自動生成ビュー `PROJECT_STATE.md`）の更新権限は、`state_manager.py` を通じた 👑 `conductor` のみが保持する。いかなるサブエージェントによる直接編集や手動改ざんも許可してはならない。 |
 | **INV-02** | **責務分離とツール実行制限** | 📐 `architect` の `run_command` 実行禁止、🛡️ `qa-engineer` のアプリ本体コード直接改変禁止、サブエージェントによる Git 操作・本番デプロイ・DB強制上書き・Docker全体起動停止の禁止を緩和してはならない。 |
 | **INV-03** | **Anti-God Component / File 制限** | フロントエンド 1 コンポーネントファイル最大 250 行制限、およびバックエンド 1 モジュールファイル最大 400 行制限を撤廃・緩和してはならない。 |
 | **INV-04** | **本番モックOFF・直書きモック禁止** | コンポーネント内のダミーデータ直書き禁止（MSW 集約必須）、および本番ビルド時の `VITE_ENABLE_MOCK=false` 二重防御をバイパスしてはならない。 |

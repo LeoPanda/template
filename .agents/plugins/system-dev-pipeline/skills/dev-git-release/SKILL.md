@@ -35,7 +35,7 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    git commit -m "chore: save work before release"
    ```
 
-### 2. バージョン番号の取得とサニタイズ (V2.4 二重プレフィックス防止ガード)
+### 2. バージョン番号の取得とサニタイズ (二重プレフィックス防止ガード)
 1. `.env`（または `.env.production`）ファイルからバージョン番号を抽出し、先頭の `v` または `V` を除去してサニタイズしてください。
    ```bash
    RAW_VERSION=$(grep -E '^(APP_)?VERSION=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
@@ -102,5 +102,5 @@ PHASE 8（本番リリースおよびドキュメント改訂管理ルール適�
    git checkout -b feature
    ```
 
-### 7. 状態管理（PROJECT_STATE.md）との同期
-1. `PROJECT_STATE.md` のバージョン情報、現在のブランチ（`feature`）、および最新リリースコミットハッシュを記録・同期してください。
+### 7. 状態管理（Single Writer 原則）との同期
+1. `python3 scripts/state_manager.py complete-task --id P8-T02` を実行し、本番リリースの完了を状態台帳へ記録してください。

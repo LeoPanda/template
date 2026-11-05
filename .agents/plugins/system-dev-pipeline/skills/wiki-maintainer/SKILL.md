@@ -3,7 +3,7 @@ name: wiki-maintainer
 description: "テスト失敗、レビュー指摘、自律修復発生時の根本原因分析（RCA）を実施し、プロジェクトローカルの wiki/patterns/ へ知見を永続化するスキル。"
 ---
 
-# Wiki知見永続化・RCA (wiki-maintainer) スキル V2.3
+# Wiki知見永続化・RCA (wiki-maintainer) スキル
 
 - **主担当エージェント**: 🛡️ 品質・テスト & 監査・QAスペシャリスト (`qa-engineer`) (Model: `pro`)
 - **委譲元 / 統括**: 👑 プロジェクトコンダクター (`conductor`)
@@ -15,7 +15,7 @@ description: "テスト失敗、レビュー指摘、自律修復発生時の根
 ## 1. 入力情報
 - エラーログ、スタックトレース、テスト失敗出力
 - レビュー結果報告書（不合格要因、指摘箇所）
-- 試行錯誤履歴、環境設定やライブラリのトラップ、選定プロファイル（Profile A〜D）
+- 試行錯誤履歴、環境設定やライブラリのトラップ、選定プロファイル（Profile A〜E）
 
 ---
 
@@ -29,14 +29,14 @@ description: "テスト失敗、レビュー指摘、自律修復発生時の根
 
 1. **Tier 1: プロジェクト固有仕様 (Local Domain / Specs)**
    - 業務ロジックの特殊仕様、個別画面の特有制約、対象システムの個別DB定義など。
-   - 配置先: `./wiki/patterns/local/PAT-LOC-xxx_{識別名}.md`
+   - 配置先: `./wiki/patterns/local/PAT-LOC-<SEQ>_{識別名}.md`
    - **正本化フロー**: 各フェーズ完了ゲートにおいて `./docs/`（仕様書・設計書）および `./PROJECT_STATE.md` へ逆同期して案件内で完結させる（中央の Knowledge Hub へは持ち出さない）。
 2. **Tier 2: 汎用パターン・共通落とし穴 (Universal Patterns / Pitfalls)**
    - フレームワーク挙動、Docker/コンテナ仕様、型安全性、共通テスト手順、エージェント行動規範など他案件でも再利用すべき汎用知見。
-   - 配置先: `./wiki/patterns/universal/PAT-{CAT}-xxx_{識別名}.md` (`CAT`: `ARCH`, `CODE`, `TEST`, `ENV`, `SEC`, `SYS`)
+   - 配置先: `./wiki/patterns/universal/PAT-{CAT}-<SEQ>_{識別名}.md` (`CAT`: `ARCH`, `CODE`, `TEST`, `ENV`, `SEC`, `SYS`)
    - **昇格フロー**: PHASE 8 において `wiki-proposer` が読み込み、標準化知見原票（`CLAIM-*.md`）へ変換して `~/.gemini/knowledge-hub/inbox/` へ投函する。
 
-### Step 3: パターンファイルの作成・記録 (V2.3 拡張フォーマット)
+### Step 3: パターンファイルの作成・記録 (拡張フォーマット)
 PHASE 8 で標準化知見原票へシームレスに変換できるよう、発生プロファイル・適用対象プロファイル・統合候補アンカーを含めて生成する。
 
 ```markdown
@@ -45,7 +45,7 @@ PHASE 8 で標準化知見原票へシームレスに変換できるよう、発
 - **Pattern ID**: PAT-{CAT}-xxx
 - **作成日**: YYYY-MM-DD
 - **知見スコープ**: Tier 1 (プロジェクト固有 / Local) / Tier 2 (テンプレート共通 / Universal)
-- **発生プロファイル**: [Profile A / Profile B / Profile C / Profile D / ALL]
+- **発生プロファイル**: [Profile A / Profile B / Profile C / Profile D / Profile E / ALL]
 - **適用対象プロファイル**: [ALL / Profile A / Profile D 等]
 - **カテゴリ**: [ARCH / CODE / TEST / ENV / SEC / SYS]
 - **重大度**: [CRITICAL / HIGH / MEDIUM / LOW]

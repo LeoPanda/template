@@ -54,6 +54,13 @@ def render_markdown(s: dict) -> str:
     rev = s.get("revisions", {})
     met = s.get("metrics_summary", {})
     scores = met.get("category_scores", {})
+    
+    # 英語キーと日本語キーの両対応
+    res_score = scores.get("resource", scores.get("リソース効率", "-"))
+    qual_score = scores.get("quality", scores.get("品質・堅牢性", "-"))
+    evo_score = scores.get("evolution", scores.get("ナレッジ進化", "-"))
+    gov_score = scores.get("governance", scores.get("ガバナンス", "-"))
+    
     lines = [
         "# プロジェクト進行状態管理票 (PROJECT_STATE)",
         "",
@@ -93,10 +100,10 @@ def render_markdown(s: dict) -> str:
         f"- **総合健全性スコア**: {met.get('total_score', '未測定')} 点",
         f"- **総合品質グレード**: {met.get('grade', '-')}",
         "- **カテゴリ別スコア**:",
-        f"  - リソース効率: {scores.get('resource', '-')} / 25.0 点",
-        f"  - 品質・堅牢性: {scores.get('quality', '-')} / 35.0 点",
-        f"  - ナレッジ進化: {scores.get('evolution', '-')} / 15.0 点",
-        f"  - ガバナンス  : {scores.get('governance', '-')} / 25.0 点",
+        f"  - リソース効率: {res_score} / 25.0 点",
+        f"  - 品質・堅牢性: {qual_score} / 35.0 点",
+        f"  - ナレッジ進化: {evo_score} / 15.0 点",
+        f"  - ガバナンス  : {gov_score} / 25.0 点",
         f"- **通算トークン消費**: {met.get('total_tokens', '-')} tokens",
         f"- **通算ツール呼出数**: {met.get('total_tool_calls', '-')} 回",
         f"- **正味開発規模(LOC)**: {met.get('net_loc', '-')} 行",
@@ -130,7 +137,7 @@ def render_markdown(s: dict) -> str:
 def cmd_init(args):
     schema_path = Path(__file__).resolve().parent.parent / "templates" / "project_state.schema.json"
     state = {
-        "schema_version": "2.6.0",
+        "schema_version": "2.6.2",
         "project_metadata": {
             "project_name": args.name or Path.cwd().name,
             "app_version": args.version or "1.0.0",
@@ -138,7 +145,7 @@ def cmd_init(args):
             "mock_mode": "ENABLED",
             "execution_mode": "GLOBAL_PLUGIN",
             "template_source": "~/.gemini/config/plugins/system-dev-pipeline",
-            "knowledge_hub_status": "SYNCED (Immutable Core v2.6.0 + Local Overlay)",
+            "knowledge_hub_status": "SYNCED (Immutable Core v2.6.2 + Local Overlay)",
             "current_branch": "main",
             "updated_at": now_iso(),
             "updated_by": "conductor",
@@ -280,13 +287,33 @@ def cmd_sync_metrics(args):
         return
     m_data = json.loads(m_path.read_text(encoding="utf-8"))
     summary = m_data.get("summary", m_data)
+    resources = m_data.get("resources", {})
+    artifacts = m_data.get("artifacts", {})
+    
+    cat_scores = summary.get("category_scores", {})
+    scores = {}
+    key_mapping = {
+        "resource": ["resource", "リソース効率"],
+        "quality": ["quality", "品質・堅牢性"],
+        "evolution": ["evolution", "ナレッジ進化"],
+        "governance": ["governance", "ガバナンス"]
+    }
+    for eng_k, cands in key_mapping.items():
+        val = None
+        for cand in cands:
+            if cand in cat_scores:
+                c_val = cat_scores[cand]
+                val = c_val.get("weighted_score", c_val) if isinstance(c_val, dict) else c_val
+                break
+        scores[eng_k] = val if val is not None else "-"
+
     state["metrics_summary"] = {
-        "total_score": summary.get("total_health_score", summary.get("total_score")),
-        "grade": summary.get("overall_grade", summary.get("grade")),
-        "category_scores": summary.get("category_scores", {}),
-        "total_tokens": summary.get("total_tokens"),
-        "total_tool_calls": summary.get("total_tool_calls"),
-        "net_loc": summary.get("net_loc"),
+        "total_score": summary.get("total_score", summary.get("total_health_score")),
+        "grade": summary.get("grade", summary.get("overall_grade", "-")),
+        "category_scores": scores,
+        "total_tokens": summary.get("total_tokens") or resources.get("total_tokens_consumed", "-"),
+        "total_tool_calls": summary.get("total_tool_calls") or resources.get("tool_calls_total", "-"),
+        "net_loc": summary.get("net_loc") or artifacts.get("git_net_loc_added", "-"),
         "last_collected_at": now_iso()
     }
     save_and_render(state)
@@ -314,6 +341,147 @@ def cmd_verify_integrity(args):
         sys.exit(0)
     sys.exit(1)
 
+def scaffold_revision_plan(rid: str, title: str):
+    """start-revision 実行時に REV-1〜REV-5 準拠の計画スケルトンを自動生成する"""
+    plans_dir = Path(f"docs/plans/{rid}改訂計画")
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 現行 Overlay ルールの読み込み
+    overlay_path = Path.home() / ".gemini" / "knowledge-hub" / "overlay" / "LOCAL_FEEDBACK_RULES.md"
+    overlay_rules_text = ""
+    if overlay_path.is_file():
+        try:
+            overlay_rules_text = overlay_path.read_text(encoding="utf-8").strip()
+        except Exception:
+            pass
+    if not overlay_rules_text:
+        overlay_rules_text = "（現在適用中の追加ローカルオーバーレイ規約はありません）"
+
+    plan_file = plans_dir / "00_改訂基本計画書.md"
+    if not plan_file.exists():
+        plan_content = f"""# 改訂基本計画書: [{rid}] {title}
+
+- **改訂依頼番号**: {rid}
+- **改訂タイトル**: {title}
+- **起票日時**: {now_iso()}
+- **ステータス**: 計画策定中 (REV-1)
+
+---
+
+## 1. 改訂概要および目的
+- 対象改訂の目的、スコープ、背景を簡潔に記載してください。
+
+---
+
+## 2. 標準改訂フェーズ (REV-1〜REV-5) チェックリスト
+
+- [ ] **REV-1: 要件・設計精査 (Planning & Design)**
+  - [ ] 差分要件定義書起草・精査 (`[REQ-Fxx]`, `[REQ-NFxx]`)
+  - [ ] 差分基本設計書起草（技術・スキーマ・ロジック・画面仕様書）
+  - [ ] 基本設計レビュー (`dev-review-arch` / `traceability_checker.py --mode design`) PASS
+- [ ] **REV-2: 実装・静的検証 (Implementation & Hard Gate)**
+  - [ ] バックエンド/フロントエンド差分実装（行数制限 250/400 遵守、直書きモック排除）
+  - [ ] コミット前 Hard Gate (`python3 scripts/harness_guard.py --all`) PASS
+- [ ] **REV-3: テスト・視認レビュー (Verification & Sensory)**
+  - [ ] シナリオテスト拡充（異常系比率20%以上、3階層深層アサーション、トートロジー排除）
+  - [ ] モック切替・実データ一気通貫E2E検証
+  - [ ] ブラウザ感覚センサー検証（コンソールエラー0件、WCAG AA 4.5:1）
+- [ ] **REV-4: 本番総合監査・成果物ビルド (System Review & Build)**
+  - [ ] コード品質レビュー (`dev-review-code`) CLEAN
+  - [ ] システム総合レビュー (`dev-review-system`) RELEASE APPROVED
+  - [ ] 本番成果物の物理ビルド（Profile D: `npm run tauri build` / Profile A: 本番コンテナ確認）
+- [ ] **REV-5: メトリクス・知見昇格・リリース (Metrics & Closure)**
+  - [ ] 定量メトリクス集計 (`python3 scripts/metrics_collector.py --all --sync-state`)
+  - [ ] RCA知見の整理・昇格 (`wiki-proposer`, `TEMPLATE_PROMOTIONS.md` 承認・反映)
+  - [ ] Invariants Gate 自動検証 (`python3 scripts/state_manager.py complete-revision`) PASS
+
+---
+
+## 3. 適用必須ガードレール一覧 (起草時点 Overlay スナップショット)
+
+```markdown
+{overlay_rules_text}
+```
+"""
+        plan_file.write_text(plan_content, encoding="utf-8")
+        print(f"📄 改訂計画スケルトンを自動生成しました: {plan_file}")
+
+    step_templates = [
+        ("REV-1_要件・設計精査手順書.md", "REV-1: 要件定義・基本設計・RTM設計カバレッジ検証の手順"),
+        ("REV-2_実装・静的検証手順書.md", "REV-2: 実装・行数制限遵守・harness_guard検証の手順"),
+        ("REV-3_テスト・視認レビュー手順書.md", "REV-3: シナリオテスト・深層アサーション・ブラウザ感覚センサー検証の手順"),
+        ("REV-4_本番総合監査・成果物ビルド手順書.md", "REV-4: 総合レビュー合格および本番バイナリ/成果物ビルドの手順"),
+        ("REV-5_メトリクス・知見昇格・リリース手順書.md", "REV-5: メトリクス集計・知見昇格・Invariants検証・クローズの手順"),
+    ]
+    for filename, step_desc in step_templates:
+        step_p = plans_dir / filename
+        if not step_p.exists():
+            step_p.write_text(f"# {step_desc}\n\n- 改訂依頼番号: {rid}\n- ステータス: 準備中\n", encoding="utf-8")
+
+def validate_revision_closure_invariants(state: dict):
+    """改訂クローズ時の前提条件を決定論的に機械検証する (Invariants Hard Gate)"""
+    violations = []
+    metadata = state.get("project_metadata", {})
+    profile = metadata.get("deployment_profile", "")
+
+    # 1. 本番成果物の物理実在性検証 (Profile別)
+    if "Profile D" in profile or Path("src-tauri").is_dir():
+        bundle_dirs = [
+            Path("src-tauri/target/release/bundle"),
+            Path("src-tauri/target/release")
+        ]
+        has_release_artifact = False
+        for bdir in bundle_dirs:
+            if bdir.is_dir():
+                for f in bdir.rglob("*"):
+                    if f.is_file() and not f.name.endswith((".d", ".rlib", ".rmeta")):
+                        has_release_artifact = True
+                        break
+            if has_release_artifact:
+                break
+        if not has_release_artifact:
+            violations.append(
+                "[INV-REL-01] Profile D 本番アプリ成果物 (src-tauri/target/release/bundle/*) が未ビルドです。"
+                " (実行必須: npm run tauri build)"
+            )
+    elif "Profile A" in profile:
+        if not Path("Dockerfile").exists() and not Path("Dockerfile.prod").exists() and not Path("docker-compose.yml").exists():
+            violations.append("[INV-REL-01] Profile A 本番コンテナ構成ファイル (Dockerfile / docker-compose.yml) が存在しません。")
+
+    # 2. 定量メトリクス集計の最新実行検証
+    metrics_json = METRICS_JSON_PATH
+    if not metrics_json.exists():
+        violations.append(
+            "[INV-MET-01] 定量メトリクス集計ファイル (metrics/development-metrics-summary.json) が存在しません。"
+            " (実行必須: python3 scripts/metrics_collector.py または dev-metrics-collector)"
+        )
+    else:
+        try:
+            m_data = json.loads(metrics_json.read_text(encoding="utf-8"))
+            summary = m_data.get("summary", m_data)
+            score = summary.get("total_score", summary.get("total_health_score"))
+            if score is None:
+                violations.append("[INV-MET-02] メトリクス集計JSONに total_score が算出されていません。")
+        except Exception as e:
+            violations.append(f"[INV-MET-03] メトリクス集計JSONの構文解析に失敗しました: {e}")
+
+    # 3. Knowledge Hub 昇格知見の未処理残存検証
+    promo_file = Path("TEMPLATE_PROMOTIONS.md")
+    if promo_file.exists():
+        content = promo_file.read_text(encoding="utf-8")
+        if "[ ] 承認待ち" in content or "INBOX_PENDING" in content:
+            violations.append(
+                "[INV-HUB-01] TEMPLATE_PROMOTIONS.md に未承認・未処理の昇格知見原票が残存しています。"
+                " (実行必須: ask_question によるユーザー承認 & pipeline-reconciler.sh --activate-claim)"
+            )
+
+    if violations:
+        print("❌ [HARD GATE BLOCKED] 改訂完了前提条件 (Invariants) 違反を検出しました:", file=sys.stderr)
+        for v in violations:
+            print(f"  • {v}", file=sys.stderr)
+        print("\n上記の未完了タスクをすべて物理的に完了してから、再度 complete-revision を実行してください。", file=sys.stderr)
+        sys.exit(1)
+
 def cmd_start_revision(args):
     state = load_state()
     rev = state.setdefault("revisions", {})
@@ -326,24 +494,39 @@ def cmd_start_revision(args):
     except Exception:
         pass
     print(f"🚀 改訂起票: [{args.id}] {args.title} (Branch: {branch_name})")
+    scaffold_revision_plan(args.id, args.title)
     save_and_render(state)
 
 def cmd_complete_revision(args):
     state = load_state()
+    if not getattr(args, "skip_invariants_check", False):
+        validate_revision_closure_invariants(state)
+
     rev = state.setdefault("revisions", {})
     rid = args.id or rev.get("active_revision_id")
-    if getattr(args, "version", None):
-        state["project_metadata"]["version"] = args.version
+    target_version = args.version or state.get("project_metadata", {}).get("app_version", "1.0.0")
+    if args.version:
+        state["project_metadata"]["app_version"] = args.version
+
+    turn = getattr(args, "turn", "1") or "1"
+    author = getattr(args, "author", "conductor") or "conductor"
+
     history = rev.setdefault("history", [])
     history.append({
-        "id": rid, "title": args.title or "機能改訂", "status": "COMPLETED",
+        "id": rid,
+        "title": args.title or "機能改訂",
+        "version": target_version,
+        "turn": turn,
+        "author": author,
+        "status": "COMPLETED",
         "started_at": state.get("project_metadata", {}).get("updated_at", ""),
-        "completed_at": now_iso(), "branch": state.get("project_metadata", {}).get("current_branch", "main")
+        "completed_at": now_iso(),
+        "branch": state.get("project_metadata", {}).get("current_branch", "main")
     })
     rev["current_revision_status"] = "IDLE"
     rev["active_revision_id"] = None
-    save_and_render(state)
-    print(f"✅ 改訂完了: [{rid}] {args.title or '機能改訂'} (Version: {state.get('project_metadata', {}).get('version', '')})")
+    save_and_render(state, author=author)
+    print(f"✅ 改訂完了: [{rid}] {args.title or '機能改訂'} (Version: {state.get('project_metadata', {}).get('app_version', '')})")
 
 def main():
     p = argparse.ArgumentParser(description="AI Harness Deterministic State Ledger Manager")
@@ -379,6 +562,9 @@ def main():
     p_crev.add_argument("--id", type=str)
     p_crev.add_argument("--title", type=str)
     p_crev.add_argument("--version", type=str)
+    p_crev.add_argument("--turn", type=str, default="1")
+    p_crev.add_argument("--author", type=str, default="conductor")
+    p_crev.add_argument("--skip-invariants-check", action="store_true", help="緊急時用にInvariants検査をバイパス")
 
     args = p.parse_args()
     cmds = {

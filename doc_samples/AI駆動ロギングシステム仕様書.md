@@ -291,3 +291,38 @@ def set_dynamic_log_level(payload: LogLevelRequest):
 ```
 
 ---
+
+## **5. 内部監視・死活監視エンドポイント仕様 ([REQ-NF12])**
+
+システム障害の早期検知およびコンテナ死活監視のため、FastAPIバックエンドに以下の内部監視エンドポイントを標準配備する。
+
+### **5.1. 死活監視エンドポイント (`GET /api/internal/health`)**
+- **目的**: コンテナプロセスの死活監視および SQLite データベース疎通確認。
+- **レスポンス**:
+  ```json
+  {
+    "status": "healthy",
+    "timestamp": "2026-11-05T15:00:00Z",
+    "database": "connected",
+    "version": "1.0.0"
+  }
+  ```
+
+### **5.2. Litestream 同期ラグ監視エンドポイント (`GET /api/internal/litestream/status`)**
+- **目的**: Litestream による GCS への WAL レプリケーション遅延（ラグ）の監視。
+- **レスポンス**:
+  ```json
+  {
+    "status": "ok",
+    "replication_lag_seconds": 1.2,
+    "last_sync": "2026-11-05T14:59:58Z"
+  }
+  ```
+
+---
+
+## **6. ドキュメント改定履歴**
+
+| 改訂依頼番号 | 対象バージョン | ターン | 改定者 | 改定概要 | 完了日 |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| - | v1.0.0 | - | 💻 backend-engineer | 初期ロギング仕様策定（構造化JSON・log_id・動的ログレベル・内部監視エンドポイント準拠） | 2026-11-05 |

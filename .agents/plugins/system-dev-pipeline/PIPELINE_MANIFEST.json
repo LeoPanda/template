@@ -1,7 +1,7 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.6.1",
-  "released_at": "2026-10-31T09:00:00+09:00",
+  "version": "2.6.2",
+  "released_at": "2026-11-05T16:00:00+09:00",
   "invariants_version": "1.0.0",
   "absorbed_patterns": [
     {
@@ -301,6 +301,130 @@
         "templates/技術要件定義書.md"
       ],
       "summary": "Litestream スーパーバイザー起動コマンド正規構文標準化(exec litestream replicate ... -exec)と誤謬遮断"
+    },
+    {
+      "pattern_id": "PAT-CODE-002",
+      "claim_ids": [
+        "CLAIM-20261101-bicycle-maintenance-PAT-CODE-002"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-review-code/SKILL.md",
+        "agents/qa-engineer.md"
+      ],
+      "summary": "リファクタリング・行数削減時の機能等価性マトリクス監査による縮退実装の即時BLOCKED判定"
+    },
+    {
+      "pattern_id": "PAT-SYS-012",
+      "claim_ids": [
+        "CLAIM-20261101-bicycle-maintenance-PAT-SYS-012"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase2-requirements/SKILL.md",
+        "agents/architect.md"
+      ],
+      "summary": "Profile選定における5大適合性診断と2択提案"
+    },
+    {
+      "pattern_id": "PAT-SYS-013",
+      "claim_ids": [
+        "CLAIM-20261102-bicycle-maintenance-PAT-SYS-013"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "rules/CORE_INVARIANTS.md",
+        "scripts/state_manager.py",
+        "docs/システム改訂運用基準書.md"
+      ],
+      "summary": "改訂サイクル完了時の4大Invariants機械検証ゲート（成果物・メトリクス・Promotion原票・状態整合性）"
+    },
+    {
+      "pattern_id": "PAT-SYS-014",
+      "claim_ids": [
+        "CLAIM-20261102-bicycle-maintenance-PAT-SYS-014"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-review-system/SKILL.md"
+      ],
+      "summary": "Profile D 本番ビルドにおけるモック排除二重防御（VITE_ENABLE_MOCK=false強制・IPC直接呼出保証）"
+    },
+    {
+      "pattern_id": "PAT-TEST-002",
+      "claim_ids": [
+        "CLAIM-20261101-bicycle-maintenance-PAT-TEST-002"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase2-requirements/SKILL.md",
+        "scripts/traceability_checker.py"
+      ],
+      "summary": "サブ要件ID細分化によるトレーサビリティ粒度向上と機械的マッピング"
+    },
+    {
+      "pattern_id": "PAT-TEST-003",
+      "claim_ids": [
+        "CLAIM-20261101-bicycle-maintenance-PAT-TEST-003"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase6-testing/SKILL.md",
+        "scripts/traceability_checker.py"
+      ],
+      "summary": "自己完結型トートロジー・テストの排除とAST機械検査によるアサーション無効化"
+    },
+    {
+      "pattern_id": "PAT-TEST-004",
+      "claim_ids": [
+        "CLAIM-20261102-bicycle-maintenance-PAT-TEST-004"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skills/dev-phase6-testing/SKILL.md"
+      ],
+      "summary": "モックOFF実データ一気通貫E2Eユーザージャーニー検証（作成・変更・検索・削除連動確認）"
+    },
+    {
+      "pattern_id": "PAT-QA-003",
+      "claim_ids": [
+        "CLAIM-20261102-bicycle-maintenance-PAT-QA-003"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "skeletons/profile-a/backend/tests/conftest.py",
+        "skills/dev-phase6-testing/SKILL.md"
+      ],
+      "summary": "多言語非同期テストにおける一時DB UUID分離とアトミック破棄によるデータ競合根絶"
+    },
+    {
+      "pattern_id": "PAT-METRICS-001",
+      "claim_ids": [
+        "CLAIM-20261104-template-PAT-METRICS-001"
+      ],
+      "absorbed_in_version": "2.6.2",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "skills/dev-metrics-collector/scripts/reporters.py",
+        "scripts/state_manager.py"
+      ],
+      "summary": "開発メトリクス集計JSONのスキーマ整合性・エイリアスキー出力とState Manager自動同期"
     }
   ]
 }

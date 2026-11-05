@@ -3,7 +3,7 @@ name: wiki-compactor
 description: "PHASE 8 または定期保守時において、プロジェクト内Wikiパターンの重複排除・アーカイブ、および Central Knowledge Hub の inbox 原票クラスタリング・Local Overlay 圧縮を行うスキル。"
 ---
 
-# Wiki枝刈り・原票クラスタリング・Overlay圧縮 (wiki-compactor) スキル V2.3
+# Wiki枝刈り・原票クラスタリング・Overlay圧縮 (wiki-compactor) スキル
 
 - **主担当エージェント**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **適用フェーズ**: PHASE 8 完了時、Knowledge Hub 監査前、または定期保守時
@@ -30,7 +30,7 @@ description: "PHASE 8 または定期保守時において、プロジェクト�
 
 ### Step 2: Hub 内 `~/.gemini/knowledge-hub/inbox/` の事前原票クラスタリング
 1. 複数のプロジェクトから `~/.gemini/knowledge-hub/inbox/` に投函された未処理原票（`CLAIM-*.md`）をスキャンする。
-2. 同一カテゴリ・同一アンカー・同一原因に対する類似原票が複数存在する場合は、YAML Frontmatter の `consolidated_from` リストに元の原票ID群を記録した上で、1枚の集約知見原票（Consolidated Claim MD）へ束ね、統合元の重複原票を `archive/` へ退避する。
+2. 同一カテゴリ・同一アンカー・同一原因に対する類似原票が複数存在する場合は、YAML Frontmatter の `consolidated_from` リストに元の原票ID群を記録した上で、1枚の集約知見原票（Consolidated Claim MD）へ束ね、統合元の重複原票を `archive/consolidated/` へ退避する。
 
 ### Step 3: Local Overlay (`LOCAL_FEEDBACK_RULES.md`) のバジェット監視と圧縮
 1. `bash .agents/plugins/system-dev-pipeline/scripts/pipeline-reconciler.sh --status`（またはグローバルスクリプト）を実行し、`~/.gemini/knowledge-hub/overlay/LOCAL_FEEDBACK_RULES.md` の行数を確認する。

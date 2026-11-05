@@ -3,7 +3,7 @@ name: dev-phase4-env-build
 description: "PHASE 4 開発環境・システム構築スキル。コンダクター統括のもと、静的スケルトンを土台にBE/FE並行委譲実装、標準コマンドシーケンス自動実行 (Alembic/Codegen/CI検証)、コンテナ構成・Git初期化を行う。"
 ---
 
-# PHASE 4: 開発環境およびシステムの構築 V2.2
+# PHASE 4: 開発環境およびシステムの構築
 
 - **統括・環境・標準コマンド・Git専任**: 👑 プロジェクトコンダクター (`conductor`) (Model: `pro`)
 - **バックエンド実装担当**: 💻 バックエンドエンジニア (`backend-engineer`) (Model: `pro`)
@@ -18,11 +18,11 @@ description: "PHASE 4 開発環境・システム構築スキル。コンダク�
 
 ### 1. 仕様の確認
 以下の設計書一式を確認します：
-- `docs/技術要件定義書.md`
-- `docs/テーブルスキーマ定義書.md`
-- `docs/ビジネスロジック仕様書.md`
-- `docs/画面仕様書.md`
-- 定常コア8項目設計仕様（構造化ログ、Pydantic Settings、Aware UTC、モック二重防御）
+- `docs/設計書/Current/技術要件定義書.md`
+- `docs/設計書/Current/テーブルスキーマ定義書.md`
+- `docs/設計書/Current/ビジネスロジック仕様書.md`
+- `docs/設計書/Current/画面仕様書.md`
+- 定常コア9項目設計仕様（構造化ログ、Pydantic Settings、Aware UTC、モック二重防御等）
 
 ### 2. 環境構築とBE/FE並行委譲（コンテキスト分離）
 コンダクターは直接大量のコードを書かず、以下の分担でオーケストレーションします：
@@ -31,10 +31,10 @@ description: "PHASE 4 開発環境・システム構築スキル。コンダク�
    - スケルトン（`docker/`, `backend/`, `frontend/`）の配置確認。
    - コンテナ設定: `backend` および `frontend` サービスで `restart: "no"` を明示設定。
 2. 💻 **`backend-engineer` への委譲 (`invoke_subagent`)**:
-   - `docs/テーブルスキーマ定義書.md`, `docs/ビジネスロジック仕様書.md` をインプットとして渡し、SQLAlchemyモデル定義、APIエンドポイント、IAP JWT署名検証ミドルウェア、内部監視エンドポイントの実装を委譲。
+   - `docs/設計書/Current/テーブルスキーマ定義書.md`, `docs/設計書/Current/ビジネスロジック仕様書.md` をインプットとして渡し、SQLAlchemyモデル定義、APIエンドポイント、IAP JWT署名検証ミドルウェア、内部監視エンドポイントの実装を委譲。
    - **生SQL手動DDLの絶対禁止**、Aware UTC保存、`user_id` カラム配置を徹底。
 3. 🎨 **`ui-designer` への委譲 (`invoke_subagent`)**:
-   - `docs/画面仕様書.md` をインプットとして渡し、フロントエンド画面・UIコンポーネント実装を委譲。
+   - `docs/設計書/Current/画面仕様書.md` をインプットとして渡し、フロントエンド画面・UIコンポーネント実装を委譲。
    - **Anti-God Component の徹底**: **1ファイル最大250行制限**、Hooks/Services分離。
    - **直書きモックの原則禁止**: コンポーネント内へのダミーデータ直書きを排除し、MSWハンドラー（`src/mocks/handlers.ts`）へ集約。
 
