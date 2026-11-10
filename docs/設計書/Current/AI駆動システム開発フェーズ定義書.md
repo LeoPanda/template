@@ -1,8 +1,8 @@
 # AI駆動システム開発フェーズ定義書（軽量・実行契約駆動・6段階改訂パイプライン準拠版）
 
-文書バージョン: 3.0.0  
+文書バージョン: 3.0.1  
 改定日: 2026-11-10  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.0 (`APP_VERSION=3.0.0`)  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.1 (`APP_VERSION=3.0.1`)  
 ステータス: 正式改訂版 (Current 正本)  
 関連文書:
 - [AI駆動システム開発手順書.md](./AI駆動システム開発手順書.md)
@@ -30,6 +30,16 @@
    - 動的描画 O(1) インメモリキャッシュ規約、非開発モード時の操作パス監視とシステム改訂パイプラインへの自律昇格（`HG-011`）。
 3. **【柱3】標準改訂パイプラインの6段階化 (REV-1〜REV-6)**:
    - `REV-4: 開発サーバー起動・ユーザー実機レビュー・対話的改修` の新設と、ユーザー承認なきクローズの機械遮断（`[INV-REV-04]`）。
+
+### 1.2 V3.0.1 改訂の 3 大柱
+1. **【柱1】本番コードからのモック・ダミー記述・例外フォールバックの機械的完全排除 (`[REQ-F-301-01]`, `HG-002`)**:
+   - バックエンド（`backend/`）およびCLI（`src-tauri/`）本番コードにおけるモック生成識別子（`generate_mock_*`, `dummy_*`, `Mock[A-Z0-9_]+`）、ダミーメディア生成記述（`testsrc`, `sine=`, `anoisesrc`, `color=black`）、および例外発生時のサイレントモックフォールバック記述をコミット前・CIで機械的に遮断。
+2. **【柱2】署名付き動的証跡 JSON 自動生成と台帳改ざん・不在素通り防止 (`[REQ-F-301-02]`, `[INV-QA-01]`)**:
+   - `metrics/qa_runtime_evidence.json` のエージェント手動作成・手書きを全面廃止し、`traceability_checker.py --mode full` 成功時にツール署名（Gitコミットハッシュ、タイムスタンプ、SHA-256）付きで決定論的に自動生成。
+   - `state_manager.py` における証跡不在時の素通りバグを修正し、`active_revision_id` 一致および SHA-256 再計算による改ざん検証を強制。
+3. **【柱3】ドキュメント精査の2段階分離と REV-4 事前検査ゲート配備 (`[REQ-F-301-03]`)**:
+   - ドキュメント精査を「第1段階: REV-3 文書衛生・構造整理 (Document Hygiene)」と「第2段階: REV-5 意味的相互整合性精査 (Semantic Cross-Check)」に分離。
+   - REV-4 実機レビュー突入前に物理検査コマンド `state_manager.py verify-review-readiness`（Pre-Review Readiness Gate）を配備し、未通過時の `set-phase REV_4` 実行をインターロック遮断。
 
 ---
 
@@ -219,25 +229,25 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    REV1["REV-1: 要件・設計・契約フィクスチャ精査<br>（起票・Golden Fixture・RTM設計PASS）"] --> REV2["REV-2: 実装・静的検証・Stage 1.5<br>（BE/FE実装・Hard Gate・実I/Oスモーク）"]
-    REV2 --> REV3["REV-3: 自動テスト・実結合E2E・感覚検証<br>（モックOFF E2E・RTM full・感覚センサー）"]
-    REV3 --> REV4["REV-4: 開発サーバー起動・ユーザー実機レビュー<br>【新設】実機確認・対話的改修ループ・ユーザー承認"]
-    REV4 --> REV5["REV-5: 本番総合監査・成果物ビルド<br>（3大レビュー合格・本番バイナリ/コンテナ）"]
-    REV5 --> REV6["REV-6: メトリクス・知見昇格・リリース<br>（集計・Hub昇格・Invariants Gate・完了）"]
+    REV1["REV-1: 要件・設計・契約フィクスチャ精査<br>（起票・Golden Fixture・RTM設計PASS）"] --> REV2["REV-2: 実装・静的検証・Stage 1.5<br>（BE/FE実装・Hard Gate HG-002・実I/Oスモーク）"]
+    REV2 --> REV3["REV-3: 自動テスト・実結合E2E・感覚検証<br>（モックOFF E2E・証跡自動生成・第1段階衛生整理・事前検査PASS）"]
+    REV3 --> REV4["REV-4: 開発サーバー起動・ユーザー実機レビュー<br>（事前検査インターロック・実機確認・対話的改修・ユーザー承認）"]
+    REV4 --> REV5["REV-5: 本番総合監査・成果物ビルド<br>（第2段階相互整合性精査・3大レビュー合格・成果物ビルド）"]
+    REV5 --> REV6["REV-6: メトリクス・知見昇格・リリース<br>（集計・Hub昇格・証跡検証 INV-QA-01・完了）"]
 ```
 
 1. **REV-1: 要件・設計・契約フィクスチャ精査**:
    - `state_manager.py start-revision` による計画スケルトン自動展開と `session_mode = "DEV_PIPELINE"` 昇格。差分要件定義、4大基本設計書更新、`tests/fixtures/golden/` 配置、`dev-review-arch` PASS。
 2. **REV-2: 実装・静的検証・Stage 1.5 スモーク**:
-   - 2段階行数制限（250/350行、400/550行）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1.5 インプロセス実I/Oスモークテスト、`harness_guard.py --all` PASS。
+   - 2段階行数制限（250/350行、400/550行）、本番コードモック・ダミー完全排除（`HG-002`）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1.5 インプロセス実I/Oスモークテスト、`harness_guard.py --all` PASS。
 3. **REV-3: 自動テスト・実結合E2E・感覚センサー検証**:
-   - テスト関数直結 RTM 検証、Stage 2 モックOFF実データ一気通貫E2E検証、感覚センサー検証、`metrics/qa_runtime_evidence.json` 出力。
+   - テスト関数直結 RTM 検証（`traceability_checker.py --mode full`）、Stage 2 モックOFF実データ一気通貫E2E検証、感覚センサー検証、署名付き動的証跡（`metrics/qa_runtime_evidence.json`）自動生成。第1段階ドキュメント衛生・構造整理を実施し、`state_manager.py verify-review-readiness` PASS を確認。
 4. **REV-4: 開発サーバー起動・ユーザー実機レビュー・改修**:
-   - 実結合開発サーバー起動、ユーザー実機テストレビュー要請、対話的改修ループ、ユーザー承認記録（`state_manager.py record-approval --phase REV_4`）。
+   - REV-4 実機レビュー突入前に物理検査コマンド `state_manager.py verify-review-readiness`（Pre-Review Readiness Gate）PASS をインターロック前提条件として実結合開発サーバー起動、ユーザー実機テストレビュー要請、対話的改修ループ、ユーザー承認記録（`state_manager.py record-approval --phase REV_4`）。
 5. **REV-5: 本番総合監査・成果物ビルド**:
-   - コード品質レビュー（`dev-review-code`: CLEAN）、システム総合レビュー（`dev-review-system`: RELEASE APPROVED）、本番成果物の物理ビルド。
+   - 第2段階ドキュメント意味的相互整合性精査、コード品質レビュー（`dev-review-code`: CLEAN）、システム総合レビュー（`dev-review-system`: RELEASE APPROVED）、本番成果物の物理ビルド。
 6. **REV-6: メトリクス・知見昇格・リリース**:
-   - 定量メトリクス集計、Knowledge Hub 知見昇格、5大 Invariants Gate 自動検証（`state_manager.py complete-revision`）、`dev-git-release`。
+   - 定量メトリクス集計、Knowledge Hub 知見昇格、5大 Invariants Gate 自動検証（`state_manager.py complete-revision` による `[INV-QA-01]` 証跡実在＆改ざん検証）、`dev-git-release`。
 
 ---
 
@@ -245,11 +255,11 @@ flowchart LR
 
 | エージェント | 絶対禁止事項 (Hard Gate Guardrails) |
 | :--- | :--- |
-| 👑 **コンダクター** | ・`PROJECT_STATE.md` 以外のサブエージェントによる状態更新の許可<br>・大文字 `V` を含むタグの付与（先頭サニタイズ必須）<br>・承認ゲートをバイパスしたフェーズ進行<br>・REV-4 ユーザー実機レビュー未承認での改訂クローズ (INV-REV-04) |
+| 👑 **コンダクター** | ・`PROJECT_STATE.md` 以外のサブエージェントによる状態更新の許可<br>・大文字 `V` を含むタグの付与（先頭サニタイズ必須）<br>・承認ゲートをバイパスしたフェーズ進行<br>・REV-4 事前物理検査ゲート未通過での REV-4 突入<br>・REV-4 ユーザー実機レビュー未承認での改訂クローズ (INV-REV-04) |
 | 📐 **アーキテクト** | ・**いかなる場合も `run_command` を呼び出してはならない（二重防御ガード）**<br>・生SQL前提のスキーマ設計（Alembic必須） |
-| 💻 **バックエンド** | ・Git操作、デプロイ実行、DB強制上書き、コンテナ起動停止コマンドの実行<br>・ハード上限550行超過、空実装・縮退実装の放置 (HG-010)<br>・生SQLによる手動DDL操作 |
+| 💻 **バックエンド** | ・Git操作、デプロイ実行、DB強制上書き、コンテナ起動停止コマンドの実行<br>・本番コード内へのモック・ダミー記述・例外フォールバック混入 (HG-002)<br>・ハード上限550行超過、空実装・縮退実装の放置 (HG-010)<br>・生SQLによる手動DDL操作 |
 | 🎨 **UIデザイナー** | ・Git操作、デプロイ実行、DB操作コマンドの実行<br>・ハード上限350行超過、空JSXイベントハンドラ直書き (HG-010)<br>・コンポーネント内へのダミーデータ直書き（MSW必須） |
-| 🛡️ **QAエンジニア** | ・**システム本体のプログラムコードの直接改変（必ず提案Diffをコンダクターへ報告）**<br>・使い捨てプローブの放置（tests/e2e/への永続化義務）<br>・自律修復ループの5回超過反復（5回失敗時は中断しユーザー報告） |
+| 🛡️ **QAエンジニア** | ・**システム本体のプログラムコードの直接改変（必ず提案Diffをコンダクターへ報告）**<br>・使い捨てプローブの放置（tests/e2e/への永続化義務）<br>・動的証跡 JSON (qa_runtime_evidence.json) の手動作成・手書き<br>・自律修復ループの5回超過反復（5回失敗時は中断しユーザー報告） |
 
 ---
 
@@ -259,3 +269,4 @@ flowchart LR
 | :--- | :--- | :--- | :--- |
 | 2.6.0 | 2026-10-26 | - | 初回Current正本化 |
 | 3.0.0 | 2026-11-10 | PLAN-V300-001 | 軽量・実行契約駆動パイプライン進化 (Golden Fixtures、2段階行数制限、Stage 1.5/2、6段階改訂 REV-1〜REV-6、自律昇格) |
+| 3.0.1 | 2026-11-10 | PLAN-V301-001 | 本番コードモック完全排除(HG-002)、署名付き動的証跡生成・状態台帳改ざん検証(REQ-F-301-02)、2段階ドキュメント精査・REV-4事前物理検査ゲート(REQ-F-301-03) |

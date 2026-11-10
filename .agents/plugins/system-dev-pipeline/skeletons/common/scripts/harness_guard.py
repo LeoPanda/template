@@ -28,7 +28,12 @@ SECRET_PATTERNS = [
 ]
 RAW_DDL_PATTERN = re.compile(r"\b(CREATE|ALTER|DROP)\s+TABLE\b", re.IGNORECASE)
 ABSOLUTE_PATH_PATTERN = re.compile(r"\[.*?\]\((file:///|/Users/|/home/|[A-Za-z]:\\).*?\)")
-MOCK_CALL_PATTERN = re.compile(r"\b(mockUsers|dummyData|MOCK_[A-Z0-9_]+)\b")
+
+# HG-002: Direct mock and media dummy patterns
+MOCK_CALL_PATTERN = re.compile(
+    r"\b(mockUsers|dummyData|MOCK_[A-Z0-9_]+|generate_mock_[a-zA-Z0-9_]+|dummy_[a-zA-Z0-9_]+|Mock[A-Z0-9_]+)\b"
+)
+MEDIA_DUMMY_PATTERN = re.compile(r"\b(testsrc|sine=|anoisesrc|color=black)\b")
 SILENT_MOCK_FALLBACK = re.compile(r"catch\s*(\(.*?\))?\s*\{\s*return\s+.*?(mock|dummy)", re.IGNORECASE | re.DOTALL)
 DAYLIGHT_DARK_CLASSES = re.compile(r"\b(?<!dark:)(text-(slate|zinc|gray|neutral)-(200|300)|bg-(slate|zinc|gray|neutral)-(900|950)|bg-blue-950)\b")
 
@@ -105,14 +110,23 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                 violations.append(Violation("HG-001", "WARN", norm, f"バックエンド行数ソフト上限超過 ({line_count}行 > {BE_LINE_WARN}行)",
                                             hint="PHASE 5.5 (dev-review-code) でサービス層/モジュール分割を推奨します。"))
 
-    # HG-002: Direct mock in production code
-    if any(norm.startswith(p) for p in ["src/components/", "src/pages/", "src/hooks/", "src/services/", "frontend/src/components/", "frontend/src/pages/", "frontend/src/hooks/", "frontend/src/services/"]) and "src/mocks/" not in norm and not is_test:
+    # HG-002: Direct mock in production code (FE / BE / Desktop)
+    is_prod_code = any(norm.startswith(p) for p in [
+        "src/components/", "src/pages/", "src/hooks/", "src/services/",
+        "frontend/src/components/", "frontend/src/pages/", "frontend/src/hooks/", "frontend/src/services/",
+        "backend/", "src-tauri/"
+    ])
+    is_exempt = "src/mocks/" in norm or is_test or any(k in norm for k in ["/.venv/", "/tests/", "/alembic/", "/migrations/"])
+    if is_prod_code and not is_exempt:
         if MOCK_CALL_PATTERN.search(content):
-            violations.append(Violation("HG-002", "BLOCK", norm, "直書きモック識別子 (mockUsers/dummyData/MOCK_*) を検出",
-                                        hint="MSW (src/mocks/) ハンドラーへ移行し、コンポーネントからは直接参照しないでください。"))
+            violations.append(Violation("HG-002", "BLOCK", norm, "直書きモック識別子 (mockUsers/dummyData/generate_mock_*/dummy_*/Mock*) を検出",
+                                        hint="MSW (src/mocks/) または Fixtures へ移行し、本番コードからは直接参照しないでください。"))
         if SILENT_MOCK_FALLBACK.search(content):
             violations.append(Violation("HG-002", "BLOCK", norm, "サイレントモックフォールバック (catch return mock) を検出",
                                         hint="Fail-Fast原則に従い、本番通信エラー時は例外を即スローしてください。"))
+        if MEDIA_DUMMY_PATTERN.search(content):
+            violations.append(Violation("HG-002", "BLOCK", norm, "メディアダミー生成記述 (testsrc/sine=/anoisesrc/color=black) を検出",
+                                        hint="Golden Fixtures (tests/fixtures/golden/) または実メディア生成ロジックを使用してください。"))
 
     # HG-003: Absolute paths in Markdown
     if norm.endswith(".md"):
@@ -163,12 +177,26 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                     violations.append(Violation("HG-008", "BLOCK", norm, f"Mermaid矢印ラベル内の特殊記号・括弧がダブルクォートされていません: |{m.group(1)}|", line_no=idx,
                                                 hint='矢印ラベル全体をダブルクォートで囲んでください (例: -->|"ラベル (補足)"|)。'))
 
-    # HG-009 (PAT-DOC-002): Document individual version in title
-    if norm.startswith("docs/設計書/Current/") and norm.endswith(".md"):
-        for idx, line in enumerate(lines[:10], 1):
-            if DOC_TITLE_VERSION_PATTERN.search(line):
-                violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書タイトルに個別バージョン番号が含まれています: {line.strip()}", line_no=idx,
-                                            hint="正本設計書タイトルから個別バージョン番号を排除し、システム SemVer (APP_VERSION) で一元管理してください。"))
+    # HG-009 (PAT-DOC-002): Document hygiene & versioning invariants
+    if norm.startswith("docs/設計書/") and norm.endswith(".md") and norm.count("/") == 2:
+        violations.append(Violation("HG-009", "BLOCK", norm, "docs/設計書/ 直下に未整理の仕様書・設計書が放置されています",
+                                    hint="docs/設計書/Current/ またはバージョン別退避ディレクトリ (docs/設計書/v* 等) へ整理・移動してください。"))
+
+    if norm.startswith("docs/設計書/Current/"):
+        fname = Path(norm).name
+        fname_lower = fname.lower()
+        if re.search(r"(_v\d+(\.\d+)*|-v\d+(\.\d+)*|\bv\d+(\.\d+)*)\.md$", fname_lower):
+            violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書ファイル名に個別バージョン番号が含まれています: {fname}",
+                                        hint="正本設計書ファイル名から個別バージョン番号を排除し、SemVer (APP_VERSION) で一元管理してください (例: 要件定義書.md)。"))
+        if fname_lower.endswith((".bak", ".tmp", ".swp")) or "draft" in fname_lower:
+            violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書ディレクトリ内に一時ファイル・下書きが残存しています: {fname}",
+                                        hint="docs/検討課題/ へ移動するか、不要な一時ファイルを削除してください。"))
+
+        if norm.endswith(".md"):
+            for idx, line in enumerate(lines[:10], 1):
+                if DOC_TITLE_VERSION_PATTERN.search(line):
+                    violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書タイトルに個別バージョン番号が含まれています: {line.strip()}", line_no=idx,
+                                                hint="正本設計書タイトルから個別バージョン番号を排除し、システム SemVer (APP_VERSION) で一元管理してください。"))
 
     # HG-010: Anti-Placeholder & empty JSX handlers (FE/BE common)
     if not is_test and not is_gen and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/", "doc_samples/")) and norm != "scripts/harness_guard.py":
@@ -210,7 +238,7 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
                        (isinstance(base, ast.Attribute) and "BaseModel" in base.attr):
                         dto_count += 1
 
-        # 例外握りつぶし: except Exception: pass または except: ...
+        # 例外握りつぶし / サイレントモックフォールバック
         if isinstance(node, ast.ExceptHandler):
             is_pass = len(node.body) == 1 and (
                 isinstance(node.body[0], ast.Pass) or
@@ -219,6 +247,14 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
             if is_pass:
                 violations.append(Violation("HG-005", "BLOCK", norm, "例外握りつぶし (except: pass / ...) を検出",
                                             line_no=node.lineno, hint="例外型を限定し、ログ記録または適切な例外再送出を行ってください。"))
+
+            # HG-002: Python サイレントモックフォールバック検知 (except 節内での mock/dummy 返却)
+            for stmt in node.body:
+                if isinstance(stmt, ast.Return) and stmt.value:
+                    val_str = ast.unparse(stmt.value) if hasattr(ast, "unparse") else ""
+                    if re.search(r"\b(mock|dummy|MOCK_)", val_str, re.IGNORECASE):
+                        violations.append(Violation("HG-002", "BLOCK", norm, f"Pythonサイレントモックフォールバックを検出 (except節内でモック/ダミー返却: {val_str})",
+                                                    line_no=stmt.lineno, hint="Fail-Fast原則に従い、本番通信・処理エラー時は例外を即スローしてください。"))
 
     if is_router and dto_count > 2:
         violations.append(Violation("HG-005", "BLOCK", norm, f"DTO過多 ({dto_count}個): router内にBaseModelが直書き定義されています",

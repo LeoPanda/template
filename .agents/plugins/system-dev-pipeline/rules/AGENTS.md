@@ -25,7 +25,7 @@
 1. 👑 **プロジェクトコンダクター (`conductor`) [Main Agent]**:
    - プロジェクト進行管理、ユーザー対話、進行フェーズ（PHASE 1〜8）および改訂サイクル（`REV-1`〜`REV-6`）の厳格管理。非開発モード時のパス監視と自律昇格（`start-revision`）。
    - `scripts/state_manager.py` による `project_state.json` 一元更新（**Single Writer 原則**）および `PROJECT_STATE.md` の決定論的自動生成。
-   - 初期スケルトン展開、環境変数設定、標準コマンドシーケンス（Alembic/Codegen/CI/Hard Gate）の統括実行。特に **`REV-4` における開発サーバー起動・ユーザー実機レビュー要請・改修オーケストレーション・承認記録** を担当。
+   - 初期スケルトン展開、環境変数設定、標準コマンドシーケンス（Alembic/Codegen/CI/Hard Gate）の統括実行。特に **`REV-4` 突入前の `verify-review-readiness` 実行義務**、および開発サーバー起動・ユーザー実機レビュー要請・改修オーケストレーション・承認記録を担当。
    - 専任コマンド実行: Git操作（`dev-git-init`, `dev-git-release`）、本番デプロイ、DB強制上書き、コンテナ起動停止。
    - **【コード・設計書直接編集原則禁止】**: コンダクターが `docs/設計書/`、`backend/`、`frontend/` 配下のファイルを直接編集することを原則禁止する。設計変更は必ず `architect`、実装は `backend-engineer` または `ui-designer` へ委譲しなければならない。
 2. 📐 **設計・立案スペシャリスト (`architect`) [Subagent]**:
@@ -64,6 +64,8 @@
 4. **ブラウザ感覚センサー**: Chrome DevTools MCP により実ブラウザのコンソールエラー 0件、WCAG AA コントラスト比（4.5:1）、A11yツリーを自動計測・検証する。
 5. **型定義自動同期 & Dual Provisioning 原則**: OpenAPI ➔ TypeScript Codegen 完全利用。`.env.example` と `.env` の自動同期・補完。
 6. **動的レンダリング O(1) キャッシュ**: フレーム駆動・動的SVG描画時は描画パラメータをキーとするインメモリキャッシュを配備し、メモリリークを未然防止する。
+7. **モック出力の物理隔離**: テスト用・開発用モックコード（`mockUsers`, `dummyData`, `generate_mock_*`, `dummy_*`, `Mock*`, メディアダミー生成記述等）の本番コード領域（`frontend/src/` の `src/mocks/` 外、`backend/` の `tests/` 外、`src-tauri/`）への直接混入およびサイレントモックフォールバック（`except` 節でのモック返却）を物理遮断する。
+8. **ドキュメント精査の2段階分離**: ドキュメントの品質保証は「第1段階：文書衛生整理（Current配下の一時ファイル・バージョン番号付きファイル排除、未整理ドキュメントの一元隔離、REV-3完了ゲート）」と「第2段階：対話的改修差分反映と相互整合性監査（要件・画面・ロジック・スキーマ整合性担保、REV-5完了ゲート）」に責務分離して実施する。
 
 ### 4.2 第2層: システム展開プロファイル (Profile A〜E) ＆ Capability Traits (2.5層)
 - **Core Profile (A〜E)**: Profile A (サーバーレス極小コストWeb型 / ゴールデンパス), Profile B (Web SSR / RDB型), Profile C (静的MPA / 超軽量CLI), Profile D (PCローカルデスクトップ型 / 二段階ハイブリッド), Profile E (AI Agent Skill / PKM 自動化CLI)。

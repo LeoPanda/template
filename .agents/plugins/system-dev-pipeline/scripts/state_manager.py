@@ -227,6 +227,78 @@ def cmd_set_traits(args):
     save_and_render(state)
     print(f"🔄 Capability Traits を更新しました: {traits}")
 
+def check_review_readiness(state: dict) -> list[str]:
+    """REV-4 実機レビュー突入前の前提条件を機械検証する (Readiness Hard Gate)"""
+    violations = []
+    root = Path.cwd()
+
+    # 検査1: harness_guard.py --all の呼び出し (終了コード0, 違反0件)
+    guard_script = Path(__file__).resolve().parent / "harness_guard.py"
+    if guard_script.is_file():
+        res = subprocess.run([sys.executable, str(guard_script), "--all"], capture_output=True, text=True)
+        if res.returncode != 0:
+            err_msg = res.stderr.strip() or res.stdout.strip()
+            violations.append(f"[READINESS-HG] Harness Guard 規約違反が検出されました:\n{err_msg}")
+
+    # 検査2: ドキュメント衛生検査 (Current配下の一時ファイル不在、docs/設計書/ 直下の未整理ファイル不在)
+    docs_dir = root / "docs" / "設計書"
+    if docs_dir.is_dir():
+        for f in docs_dir.glob("*.md"):
+            violations.append(f"[READINESS-DOC] docs/設計書/ 直下に未整理のファイルが放置されています: {f.name}")
+        current_dir = docs_dir / "Current"
+        if current_dir.is_dir():
+            for f in current_dir.iterdir():
+                fn = f.name.lower()
+                if fn.endswith((".bak", ".tmp", ".swp")) or "draft" in fn or re.search(r"(_v\d+(\.\d+)*|-v\d+(\.\d+)*|\bv\d+(\.\d+)*)\.md$", fn):
+                    violations.append(f"[READINESS-DOC] docs/設計書/Current/ 配下に不正な一時・バージョン付きファイルが存在します: {f.name}")
+
+    # 検査3: モック解除状態 (.env の VITE_ENABLE_MOCK=false, project_state.json の mock_mode = DISABLED)
+    env_mock = None
+    env_file = root / ".env"
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("VITE_ENABLE_MOCK="):
+                env_mock = line.split("=", 1)[1].strip().strip('"\'').lower()
+                break
+    mock_mode_meta = state.get("project_metadata", {}).get("mock_mode", "").upper()
+    if env_mock != "false":
+        violations.append(f"[READINESS-MOCK] .env の VITE_ENABLE_MOCK が false ではありません (現状: {env_mock})。実データ結合モードに設定してください。")
+    if mock_mode_meta != "DISABLED":
+        violations.append(f"[READINESS-MOCK] project_state.json の mock_mode が DISABLED ではありません (現状: {mock_mode_meta})。")
+
+    # 検査4: 最新の署名付き metrics/qa_runtime_evidence.json の実在およびチェックサム検証
+    qa_path = root / "metrics" / "qa_runtime_evidence.json"
+    if not qa_path.is_file():
+        violations.append("[READINESS-QA] 実結合QA実行証跡 (metrics/qa_runtime_evidence.json) が存在しません。(実行必須: python3 scripts/traceability_checker.py --mode full)")
+    else:
+        try:
+            qa_data = json.loads(qa_path.read_text(encoding="utf-8"))
+            stored_cs = qa_data.get("sha256_checksum") or qa_data.get("evidence_checksum")
+            payload = {k: v for k, v in qa_data.items() if k not in ("sha256_checksum", "evidence_checksum")}
+            calc_cs = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+            if not stored_cs or stored_cs != calc_cs:
+                violations.append("[READINESS-QA] metrics/qa_runtime_evidence.json のSHA-256署名チェックサム検証に失敗しました。")
+            if not qa_data.get("mock_mode_disabled"):
+                violations.append("[READINESS-QA] metrics/qa_runtime_evidence.json で mock_mode_disabled が true になっていません。")
+            if qa_data.get("overall_status") != "PASS":
+                violations.append(f"[READINESS-QA] metrics/qa_runtime_evidence.json の overall_status が PASS ではありません (現状: {qa_data.get('overall_status')})。")
+        except Exception as e:
+            violations.append(f"[READINESS-QA] metrics/qa_runtime_evidence.json の解析に失敗しました: {e}")
+
+    return violations
+
+def cmd_verify_review_readiness(args):
+    state = load_state()
+    violations = check_review_readiness(state)
+    if violations:
+        print("🚨 [READINESS BLOCKED] 実機レビュー準備検査 (verify-review-readiness) で違反を検出しました:", file=sys.stderr)
+        for v in violations:
+            print(f"  • {v}", file=sys.stderr)
+        sys.exit(1)
+    print("✅ [READINESS PASS] 実機レビュー (REV-4) 移行準備検査をすべてクリアしました (Hard Gate, 文書衛生, モック解除, QA署名証跡)。")
+    sys.exit(0)
+
 def normalize_phase_key(phase: str) -> str:
     p = phase.upper()
     if "5_5" in p or "55" in p:
@@ -242,7 +314,14 @@ def cmd_set_phase(args):
     norm_target = normalize_phase_key(target)
 
     # Gate Interlock
-    if norm_target == "PHASE_4":
+    if norm_target in ("REV_4", "REV-4"):
+        violations = check_review_readiness(state)
+        if violations:
+            print("🚨 [GATE BLOCKED] REV-4 移行前提条件 (verify-review-readiness) 未達成のため遷移できません:", file=sys.stderr)
+            for v in violations:
+                print(f"  • {v}", file=sys.stderr)
+            sys.exit(1)
+    elif norm_target == "PHASE_4":
         arch_v = state.get("review_gates", {}).get("arch_review", {}).get("verdict")
         if arch_v not in ("PASS", "CONDITIONAL PASS"):
             print(f"🚨 [GATE BLOCKED] 基本設計レビュー未合格 (現状: {arch_v}) のため PHASE 4 へ遷移できません。", file=sys.stderr)
@@ -534,7 +613,7 @@ def validate_revision_closure_invariants(state: dict):
             " (実行必須: python3 scripts/state_manager.py record-approval --phase REV_4)"
         )
 
-    # 5. 実結合QA実行証跡 (qa_runtime_evidence.json) 検証 (V3.0.0)
+    # 5. 実結合QA実行証跡 (qa_runtime_evidence.json) 検証 (V3.0.0 / V3.0.1)
     qa_evidence_path = Path("metrics/qa_runtime_evidence.json")
     if qa_evidence_path.is_file():
         try:
@@ -543,8 +622,23 @@ def validate_revision_closure_invariants(state: dict):
                 violations.append("[INV-QA-01] metrics/qa_runtime_evidence.json で mock_mode_disabled が true になっていません (本番モックOFF未検証)。")
             if qa_data.get("overall_status") != "PASS":
                 violations.append(f"[INV-QA-01] metrics/qa_runtime_evidence.json の overall_status が PASS ではありません (現状: {qa_data.get('overall_status')})。")
+
+            # active_revision_id の一致検証
+            cur_rid = state.get("revisions", {}).get("active_revision_id")
+            ev_rid = qa_data.get("active_revision_id")
+            if cur_rid and ev_rid and cur_rid != ev_rid:
+                violations.append(f"[INV-QA-01] metrics/qa_runtime_evidence.json の active_revision_id ({ev_rid}) が現在の改訂ID ({cur_rid}) と一致しません。")
+
+            # SHA-256 チェックサム照合による改ざん検証
+            stored_checksum = qa_data.get("sha256_checksum") or qa_data.get("evidence_checksum")
+            payload = {k: v for k, v in qa_data.items() if k not in ("sha256_checksum", "evidence_checksum")}
+            calc_checksum = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+            if not stored_checksum or stored_checksum != calc_checksum:
+                violations.append("[INV-QA-01] metrics/qa_runtime_evidence.json のSHA-256署名チェックサム検証に失敗しました (改ざん・不整合検知)。")
         except Exception as e:
             violations.append(f"[INV-QA-01] metrics/qa_runtime_evidence.json の解析に失敗しました: {e}")
+    else:
+        violations.append("[INV-QA-01] 実結合QA実行証跡 (metrics/qa_runtime_evidence.json) が存在しません。(実行必須: python3 scripts/traceability_checker.py --mode full)")
 
     if violations:
         print("❌ [HARD GATE BLOCKED] 改訂完了前提条件 (Invariants) 違反を検出しました:", file=sys.stderr)
@@ -642,6 +736,8 @@ def main():
     p_int = sub.add_parser("verify-integrity")
     p_int.add_argument("--reconcile", action="store_true")
 
+    p_readiness = sub.add_parser("verify-review-readiness", help="Verify readiness for REV-4 review")
+
     p_srev = sub.add_parser("start-revision")
     p_srev.add_argument("--id", type=str, required=True)
     p_srev.add_argument("--title", type=str, default="機能改訂")
@@ -660,6 +756,7 @@ def main():
         "set-phase": cmd_set_phase, "complete-task": cmd_complete_task,
         "record-review": cmd_record_review, "record-approval": cmd_record_approval,
         "sync-metrics": cmd_sync_metrics, "verify-integrity": cmd_verify_integrity,
+        "verify-review-readiness": cmd_verify_review_readiness,
         "start-revision": cmd_start_revision, "complete-revision": cmd_complete_revision
     }
     cmds[args.cmd](args)

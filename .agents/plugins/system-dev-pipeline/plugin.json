@@ -1,7 +1,7 @@
 {
   "name": "system-dev-pipeline",
-  "version": "3.0.0",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V3.0.0（2.5層プロファイル体系、契約駆動RTM/深層アサーション、二層行数制限/アンチプレースホルダーHard Gate、6段階改訂パイプライン、Central Knowledge Hub、3段階意味的監査）",
+  "version": "3.0.1",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V3.0.1（ハーネス死角克服・モック管理・証跡機械生成・Pre-Review Readiness Gate新設・ドキュメント2段階分離・2.5層プロファイル体系）",
   "author": "Antigravity Workflow Automation",
   "agents": [
     "conductor",

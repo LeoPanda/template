@@ -6,9 +6,12 @@ Strictly binds [REQ-*] to valid, non-tautological test function scopes and integ
 """
 import argparse
 import ast
+import datetime
+import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -297,6 +300,52 @@ def generate_rtm_markdown(reqs: dict[str, Requirement], total_tests: int, neg_te
     lines.append("")
     return "\n".join(lines)
 
+def get_mock_mode_disabled(root: Path) -> bool:
+    env_file = root / ".env"
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("VITE_ENABLE_MOCK="):
+                val = line.split("=", 1)[1].strip().strip('"\'').lower()
+                return val in ("false", "0", "off", "no")
+    return False
+
+def get_active_revision_id(root: Path) -> str | None:
+    state_file = root / "project_state.json"
+    if state_file.is_file():
+        try:
+            data = json.loads(state_file.read_text(encoding="utf-8"))
+            return data.get("revisions", {}).get("active_revision_id")
+        except Exception:
+            pass
+    return os.environ.get("ACTIVE_REVISION_ID")
+
+def get_git_commit_hash() -> str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        return "UNKNOWN_COMMIT"
+
+def emit_qa_runtime_evidence(root: Path, anomaly_test_ratio: float):
+    now_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    payload = {
+        "active_revision_id": get_active_revision_id(root),
+        "all_requirements_covered": True,
+        "anomaly_test_ratio": round(anomaly_test_ratio, 2),
+        "generated_at": now_utc,
+        "git_commit_hash": get_git_commit_hash(),
+        "mock_mode_disabled": get_mock_mode_disabled(root),
+        "overall_status": "PASS"
+    }
+    payload_json = json.dumps(payload, sort_keys=True, ensure_ascii=False)
+    checksum = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+    evidence_data = {**payload, "sha256_checksum": checksum}
+
+    out_path = root / "metrics" / "qa_runtime_evidence.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(evidence_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"📜 実結合QA実行証跡を出力しました: {out_path} (SHA-256: {checksum[:16]}...)")
+
 def main():
     parser = argparse.ArgumentParser(description="Requirements Traceability Matrix Verifier (V3.0.0)")
     parser.add_argument("--mode", choices=["design", "full"], default="full",
@@ -364,6 +413,7 @@ def main():
     if has_error:
         sys.exit(1)
 
+    emit_qa_runtime_evidence(root, neg_ratio)
     print("✅ [RTM FULL PASS] 全要件の設計・テスト 100% カバレッジおよび異常系比率基準を達成しました。")
     sys.exit(0)
 
