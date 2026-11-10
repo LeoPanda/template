@@ -55,7 +55,9 @@ description: "PHASE 8 メトリクス集計、標準化知見原票 (CLAIM-*.md)
 - コンダクター専任で `dev-git-release` を実行し、`main` ブランチへの Squash Merge、バージョンタグ付与、Push、および新規 `feature` ブランチの再作成を行います。
 
 ### 6. システム改訂運用基準書の確認と改訂管理体制への移行
-- `docs/システム改訂運用基準書.md` を確認し、標準改訂フェーズ（`REV-1`〜`REV-5`）に基づく運用体制へ移行します。
-- **改訂サイクル完了時の機械的・意味的整合性監査**:
-  以降の機能改訂完了時（`complete-revision` 実行時）、コンダクターは `state_manager.py complete-revision` の Invariants Gate（成果物実在、メトリクス算出済み、未処理知見ゼロ、ブランチ整合性）を機械検証し、未達時は自動遮断されます。
+- `docs/システム改訂運用基準書.md` を確認し、標準改訂フェーズ（`REV-1`〜`REV-6`）に基づく運用体制へ移行します。
+- **操作パス監視と自律昇格 (Elevation)**:
+  コンテンツ制作等の非開発モード運用時であっても、システム本体コード領域のファイル変更が試行された場合は `start-revision` を自律実行し、改訂パイプラインへ自動昇格します。
+- **改訂サイクル完了時の 5大 Invariants Gate**:
+  以降の機能改訂完了時（`complete-revision` 実行時）、コンダクターは `state_manager.py complete-revision` の Invariants Gate（成果物実在、メトリクス算出済み、未処理知見ゼロ、**REV-4 ユーザー実機レビュー承認**、**qa_runtime_evidence.json 検証**）を機械検証し、未達時は自動遮断されます。
 - `python3 scripts/state_manager.py set-phase PRODUCTION_ACTIVE` を実行してステータスを本番稼働中へ更新し、改訂管理体制への移行を完了してください。

@@ -13,9 +13,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Limits & Thresholds
-FE_LINE_LIMIT = 250
-BE_LINE_LIMIT = 400
+# Limits & Thresholds (V3.0.0 Two-Tier Line Limit)
+FE_LINE_WARN = 250
+FE_LINE_BLOCK = 350
+BE_LINE_WARN = 400
+BE_LINE_BLOCK = 550
 IGNORE_DIRS = {".git", "node_modules", "venv", ".venv", "__pycache__", "dist", "build", "coverage", ".agents"}
 
 SECRET_PATTERNS = [
@@ -29,6 +31,10 @@ ABSOLUTE_PATH_PATTERN = re.compile(r"\[.*?\]\((file:///|/Users/|/home/|[A-Za-z]:
 MOCK_CALL_PATTERN = re.compile(r"\b(mockUsers|dummyData|MOCK_[A-Z0-9_]+)\b")
 SILENT_MOCK_FALLBACK = re.compile(r"catch\s*(\(.*?\))?\s*\{\s*return\s+.*?(mock|dummy)", re.IGNORECASE | re.DOTALL)
 DAYLIGHT_DARK_CLASSES = re.compile(r"\b(?<!dark:)(text-(slate|zinc|gray|neutral)-(200|300)|bg-(slate|zinc|gray|neutral)-(900|950)|bg-blue-950)\b")
+
+# HG-010: Anti-Placeholder & empty handler patterns
+EMPTY_JSX_HANDLER = re.compile(r"(on[A-Z][a-zA-Z]+)=\{\s*\(\)\s*=>\s*\{\s*\}\s*\}")
+DUMMY_GEN_COMMENT = re.compile(r"(<!--\s*(?:Generated|TODO|Placeholder|ダミー)\s*-->|placeholder_output)", re.IGNORECASE)
 
 # PAT-DOC-003: Mermaid bracketed unquoted label pattern
 MERMAID_UNQUOTED_BRACKET_LABEL = re.compile(r"-->\|([^\"\|\n]*[\(\)\[\]\{\}【】][^\"\|\n]*)\|")
@@ -80,18 +86,24 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
     lines = content.splitlines()
     line_count = len(lines)
 
-    # HG-001: Line limit
+    # HG-001: Two-Tier Line Limit (WARN: soft limit / BLOCK: hard limit)
     is_test = any(k in norm for k in ["/tests/", "/__tests__/", ".test.", ".spec."])
     is_gen = norm.endswith(".generated.ts") or "migrations/" in norm or "alembic/" in norm
     if not is_test and not is_gen:
         if (norm.startswith("frontend/src/") or norm.startswith("src/")) and norm.endswith((".tsx", ".ts", ".jsx", ".js")):
-            if line_count > FE_LINE_LIMIT:
-                violations.append(Violation("HG-001", "BLOCK", norm, f"フロントエンド行数超過 ({line_count}行 > {FE_LINE_LIMIT}行)",
+            if line_count > FE_LINE_BLOCK:
+                violations.append(Violation("HG-001", "BLOCK", norm, f"フロントエンド行数ハード上限超過 ({line_count}行 > {FE_LINE_BLOCK}行)",
                                             hint="Hooksやサブコンポーネントへ物理分割してください。"))
+            elif line_count > FE_LINE_WARN:
+                violations.append(Violation("HG-001", "WARN", norm, f"フロントエンド行数ソフト上限超過 ({line_count}行 > {FE_LINE_WARN}行)",
+                                            hint="PHASE 5.5 (dev-review-code) でHooks/サブコンポーネントへの分割を推奨します。"))
         elif (norm.startswith("backend/") and norm.endswith(".py")) or (norm.startswith("src-tauri/") and norm.endswith(".rs")):
-            if line_count > BE_LINE_LIMIT:
-                violations.append(Violation("HG-001", "BLOCK", norm, f"バックエンド行数超過 ({line_count}行 > {BE_LINE_LIMIT}行)",
+            if line_count > BE_LINE_BLOCK:
+                violations.append(Violation("HG-001", "BLOCK", norm, f"バックエンド行数ハード上限超過 ({line_count}行 > {BE_LINE_BLOCK}行)",
                                             hint="DTOやサービス層へモジュールを物理分割してください。"))
+            elif line_count > BE_LINE_WARN:
+                violations.append(Violation("HG-001", "WARN", norm, f"バックエンド行数ソフト上限超過 ({line_count}行 > {BE_LINE_WARN}行)",
+                                            hint="PHASE 5.5 (dev-review-code) でサービス層/モジュール分割を推奨します。"))
 
     # HG-002: Direct mock in production code
     if any(norm.startswith(p) for p in ["src/components/", "src/pages/", "src/hooks/", "src/services/", "frontend/src/components/", "frontend/src/pages/", "frontend/src/hooks/", "frontend/src/services/"]) and "src/mocks/" not in norm and not is_test:
@@ -158,6 +170,16 @@ def check_file(rel_path: str, full_path: Path) -> list[Violation]:
                 violations.append(Violation("HG-009", "BLOCK", norm, f"正本設計書タイトルに個別バージョン番号が含まれています: {line.strip()}", line_no=idx,
                                             hint="正本設計書タイトルから個別バージョン番号を排除し、システム SemVer (APP_VERSION) で一元管理してください。"))
 
+    # HG-010: Anti-Placeholder & empty JSX handlers (FE/BE common)
+    if not is_test and not is_gen and not norm.startswith(("docs/", "wiki/", "metrics/", "skeletons/", "templates/", "doc_samples/")) and norm != "scripts/harness_guard.py":
+        for idx, line in enumerate(lines, 1):
+            if EMPTY_JSX_HANDLER.search(line):
+                violations.append(Violation("HG-010", "BLOCK", norm, f"空JSXイベントハンドラ直書きを検出: {line.strip()}", line_no=idx,
+                                            hint="イベント処理ロジックを実装するか、明示的な状態更新関数を呼び出してください。"))
+            if DUMMY_GEN_COMMENT.search(line):
+                violations.append(Violation("HG-010", "BLOCK", norm, f"ダミー・プレースホルダー生成コメントを検出: {line.strip()}", line_no=idx,
+                                            hint="プレースホルダー文字列返却を排除し、実ビジネスロジックによる生成処理を実装してください。"))
+
     return violations
 
 def check_ast_fitness(norm: str, content: str) -> list[Violation]:
@@ -201,6 +223,69 @@ def check_ast_fitness(norm: str, content: str) -> list[Violation]:
     if is_router and dto_count > 2:
         violations.append(Violation("HG-005", "BLOCK", norm, f"DTO過多 ({dto_count}個): router内にBaseModelが直書き定義されています",
                                     hint="schemas/ などの独立モジュールへDTOを物理分離してください。"))
+
+    # HG-010: Python AST empty function / placeholder detection
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            is_abstract = any(
+                (isinstance(d, ast.Name) and d.id in ("abstractmethod", "overload")) or
+                (isinstance(d, ast.Attribute) and d.attr in ("abstractmethod", "overload"))
+                for d in node.decorator_list
+            )
+            if not is_abstract:
+                body = [n for n in node.body if not (isinstance(n, ast.Expr) and isinstance(getattr(n, "value", None), ast.Constant) and isinstance(n.value.value, str))]
+                if len(body) == 1:
+                    stmt = body[0]
+                    is_empty = False
+                    if isinstance(stmt, ast.Pass):
+                        is_empty = True
+                    elif isinstance(stmt, ast.Expr) and isinstance(getattr(stmt, "value", None), ast.Constant) and stmt.value.value is Ellipsis:
+                        is_empty = True
+                    elif isinstance(stmt, ast.Raise):
+                        if isinstance(stmt.exc, ast.Call) and isinstance(stmt.exc.func, ast.Name) and stmt.exc.func.id == "NotImplementedError":
+                            is_empty = True
+                        elif isinstance(stmt.exc, ast.Name) and stmt.exc.id == "NotImplementedError":
+                            is_empty = True
+                    if is_empty:
+                        violations.append(Violation("HG-010", "BLOCK", norm, f"明白な空実装・未実装関数を検出 ({node.name}: pass / ... / NotImplementedError)",
+                                                    line_no=node.lineno, hint="機能オミット・縮退実装を排除し、実ロジックを実装してください。"))
+
+    return violations
+
+SYSTEM_CODE_PREFIXES = ("backend/", "frontend/", "src/", "src-tauri/", "docs/設計書/Current/")
+
+def check_scope_guard(root: Path, target_files: list[str]) -> list[Violation]:
+    """HG-011 / PAT-SYS-016: 非開発モード・改訂未起票時のシステム本体コード変更遮断"""
+    state_file = root / "project_state.json"
+    if not state_file.is_file():
+        return []
+
+    try:
+        s = json.loads(state_file.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+    meta = s.get("project_metadata", {})
+    session_mode = meta.get("session_mode", "DEV_PIPELINE")
+    current_status = s.get("current_status", "")
+    rev = s.get("revisions", {})
+    rev_status = rev.get("current_revision_status", "IDLE")
+
+    is_production_idle = (current_status == "PRODUCTION_ACTIVE" and rev_status == "IDLE")
+    is_content_mode = (session_mode == "CONTENT_PRODUCTION" and rev_status == "IDLE")
+
+    if not (is_production_idle or is_content_mode):
+        return []
+
+    violations = []
+    for f in target_files:
+        norm = f.replace("\\", "/")
+        if any(norm.startswith(prefix) for prefix in SYSTEM_CODE_PREFIXES):
+            violations.append(Violation(
+                "HG-011", "BLOCK", norm,
+                "Scope Guard Violation: 非開発モードまたは改訂未起票状態でのシステム本体コード改変を検出しました",
+                hint="python3 scripts/state_manager.py start-revision --id <ID> を実行してシステム改訂パイプラインへ自律昇格してください。"
+            ))
     return violations
 
 def enforce_dual_provisioning(root: Path):
@@ -232,6 +317,9 @@ def main():
         files = collect_all_files(root)
 
     all_violations: list[Violation] = []
+    # HG-011: Path-based Scope Guard check
+    all_violations.extend(check_scope_guard(root, files))
+
     for rel in files:
         full = root / rel
         if full.is_file():

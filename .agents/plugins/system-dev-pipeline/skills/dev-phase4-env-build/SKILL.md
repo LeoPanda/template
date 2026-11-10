@@ -38,26 +38,27 @@ description: "PHASE 4 開発環境・システム構築スキル。コンダク�
    - **Anti-God Component の徹底**: **1ファイル最大250行制限**、Hooks/Services分離。
    - **直書きモックの原則禁止**: コンポーネント内へのダミーデータ直書きを排除し、MSWハンドラー（`src/mocks/handlers.ts`）へ集約。
 
-### 3. 標準コマンドシーケンスの自動実行 (Standard Command Sequences)
+### 3. 標準コマンドシーケンスと Stage 1.5 スモークテストの自動実行
 実装完了後、コンダクターは以下の標準コマンドシーケンスをコンテナ内で順次自動実行します：
 
 ```bash
 # 1. コンテナのビルドと起動
 docker compose up -d --build
 
-# 2. Alembic マイグレーション自動生成
+# 2. Alembic マイグレーション自動生成 & 適用
 docker compose exec backend alembic revision --autogenerate -m "Initial schema from models"
-
-# 3. Alembic マイグレーション適用
 docker compose exec backend alembic upgrade head
 
-# 4. バックエンド OpenAPI スキーマから TypeScript 型定義自動同期
+# 3. バックエンド OpenAPI スキーマから TypeScript 型定義自動同期 (Contract-First MSW)
+docker compose exec backend python3 -c "import json; from app.main import app; print(json.dumps(app.openapi()))" > openapi.json
 docker compose exec frontend npm run codegen:types
+
+# 4. Stage 1.5 インプロセス実I/O・物理ファイル生成スモークテスト
+docker compose exec backend pytest tests/smoke/ -v
 
 # 5. コミット前CI同等ローカル検証ゲート & Hard Gate 機械的遮断
 python3 scripts/harness_guard.py --all
 docker compose exec backend ruff check .
-docker compose exec backend pytest
 docker compose exec frontend npm run lint
 docker compose exec frontend npm run type-check
 ```

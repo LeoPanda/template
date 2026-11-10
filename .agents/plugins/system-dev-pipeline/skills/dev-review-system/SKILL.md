@@ -25,9 +25,10 @@ description: "PHASE 7 本番リリース直前ゲートにおいて、本番稼�
 ## 2. 監査観点とゼロ・トレランス項目 (Zero Tolerance Items)
 
 ### 必須検証チェックリスト（1件でも違反があれば即座に `RELEASE BLOCKED`）
-0. **Hard Gate & RTM 完全充足**:
+0. **Hard Gate, RTM & 実結合QA実行証跡 (qa_runtime_evidence.json) 完全充足**:
    - `python3 scripts/harness_guard.py --all` が BLOCK 違反 0 件であること。
-   - `python3 scripts/traceability_checker.py --mode full` が PASS（未検証要件 0 件、異常系テスト比率 20% 以上、トートロジーテスト排除）であること。
+   - `python3 scripts/traceability_checker.py --mode full` が PASS（未検証要件 0 件、テスト関数直結、異常系比率 20% 以上、動的カバレッジ）であること。
+   - **`metrics/qa_runtime_evidence.json` の検証**: 実結合QA実行証跡が存在し、`mock_mode_disabled == true` かつ `overall_status == "PASS"`（実エンドポイント疎通・ファイル実在パーサー検証・感覚センサー検証合格）であること。
 1. **平文シークレット完全排除 (Zero Secrets in Plaintext)**:
    - ソースコード、Dockerfile、`本番適用作業手順書.md` 内にAPIキー、パスワード、秘密鍵が平文で直接記載されていないか。
 2. **本番モック無効化の二重防御 (Mock-Free Production Guarantee & Fail-Fast 監査)**:

@@ -117,14 +117,15 @@ flowchart TD
 
 ---
 
-## 5. 運用保守・システム改訂サイクル（`REV-1`〜`REV-5`）
+## 5. 運用保守・システム改訂サイクル（`REV-1`〜`REV-6`）
 
-初期リリース完了後の改訂・保守は、[docs/システム改訂運用基準書.md](../システム改訂運用基準書.md) に規定された5段階改訂パイプラインに厳格に従う：
-- `REV-1`: 改訂要件定義・設計（`state_manager.py start-revision`）
-- `REV-2`: 差分並行実装（Hard Gate pre-commit 自動検査）
-- `REV-3`: ウォークスルー・コード品質レビュー（`dev-review-code`）
-- `REV-4`: 回帰テスト・感覚センサー検証（`traceability_checker.py --mode full`）
-- `REV-5`: 本番反映・メトリクス集計・知見昇格（`state_manager.py complete-revision` Invariants Gate）
+初期リリース完了後の改訂・保守は、[docs/システム改訂運用基準書.md](../システム改訂運用基準書.md) に規定された6段階標準改訂パイプラインに厳格に従う：
+- `REV-1`: 要件・設計・契約フィクスチャ精査（`state_manager.py start-revision`）
+- `REV-2`: 実装・静的検証・Stage 1.5 スモーク（2段階行数制限、OpenAPI型同期）
+- `REV-3`: 自動テスト・実結合E2E・感覚センサー検証（`qa_runtime_evidence.json` 発行）
+- `REV-4`: 開発サーバー起動・ユーザー実機レビュー・改修（実結合確認・ユーザー承認記録）
+- `REV-5`: 本番総合監査・成果物ビルド（コード/システム総合レビュー合格、本番成果物ビルド）
+- `REV-6`: メトリクス・知見昇格・リリース（`state_manager.py complete-revision` Invariants Gate）
 
 ---
 

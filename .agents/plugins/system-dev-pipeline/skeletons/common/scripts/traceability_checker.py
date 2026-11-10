@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-traceability_checker.py - Requirements Traceability Matrix (RTM) Verifier (Profile E)
+traceability_checker.py - Requirements Traceability Matrix (RTM) Verifier (V3.0.0 Executable Contract)
 Enforces 100% requirements coverage from docs to design and tests, and checks negative test ratio.
+Strictly binds [REQ-*] to valid, non-tautological test function scopes and integrates dynamic coverage.
 """
 import argparse
 import ast
+import json
 import os
 import re
 import sys
@@ -14,6 +16,10 @@ REQ_PATTERN = re.compile(r"\[(REQ-(?:F|NF)\d+(?:-\d+)?)\]")
 NEGATIVE_TEST_PATTERN = re.compile(r"(@test_type:\s*negative|abnormal|error|invalid|exception|fail|reject|boundary)", re.IGNORECASE)
 IGNORE_TEST_DIRS = {".git", "node_modules", "venv", ".venv", "__pycache__", "dist", "build", "coverage", ".agents"}
 TEST_FUNC_PATTERN = re.compile(r"^\s*(?:async\s+)?(?:def\s+test_|fn\s+test_)|^\s*(?:it|test)\(")
+
+# TS/JS shallow assertion detection patterns
+SHALLOW_ASSERT_ONLY = re.compile(r"expect\([^)]+\)\.(toBeInTheDocument|toBeDefined|not\.toBeNull|toBeTruthy)\(\);?\s*$")
+DEEP_INTERACTION_PATTERN = re.compile(r"(fireEvent|userEvent|waitFor|toHaveBeenCalled|toHaveBeenCalledWith|toHaveAttribute|toHaveTextContent|toHaveValue|toStrictEqual|toEqual)")
 
 def is_test_file(path: Path) -> bool:
     parts = set(path.parts)
@@ -110,15 +116,34 @@ def check_python_test_validity(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         return False, "実コード・API・モジュール呼出を伴わないローカル自己完結テスト"
     return True, "OK"
 
+def get_preceding_comments(lines: list[str], start_line_0idx: int, max_lines: int = 3) -> str:
+    """関数の直前最大 max_lines 行のコメント文字列を取得"""
+    comments = []
+    idx = start_line_0idx - 1
+    while idx >= 0 and len(comments) < max_lines:
+        line_str = lines[idx].strip()
+        if line_str.startswith("#") or line_str.startswith("//") or line_str.startswith("/*") or line_str.startswith("*"):
+            comments.append(line_str)
+            idx -= 1
+        elif not line_str:
+            idx -= 1
+        else:
+            break
+    comments.reverse()
+    return "\n".join(comments)
+
 def scan_test_artifacts(root: Path, reqs: dict[str, Requirement]) -> tuple[int, int]:
+    """
+    V3.0.0 Executable Contract-Driven RTM Scanner:
+    1. docs/plans/シナリオテスト計画書.md を完全除外。
+    2. 有効と判定されたテスト関数スコープ（Python AST 関数ノード / TS・JS・Rust の有効テストブロック＋直上3行コメント）
+       に存在する [REQ-*] のみをカウントし、ファイル全文の単純マッチングを根絶。
+    """
     test_files = []
     for ext in ["*.py", "*.ts", "*.tsx", "*.js", "*.rs"]:
         for p in root.rglob(ext):
             if is_test_file(p):
                 test_files.append(p)
-    plan_file = root / "docs" / "plans" / "シナリオテスト計画書.md"
-    if plan_file.is_file():
-        test_files.append(plan_file)
 
     total_tests = 0
     negative_tests = 0
@@ -126,75 +151,162 @@ def scan_test_artifacts(root: Path, reqs: dict[str, Requirement]) -> tuple[int, 
     for tf in test_files:
         try:
             content = tf.read_text(encoding="utf-8")
-            for req_id, obj in reqs.items():
-                if req_id in content:
-                    obj.test_refs.append(tf.name)
+            lines = content.splitlines()
 
-            # Count test cases & negative tests in test code
-            if tf != plan_file:
-                # Python の場合は AST でトートロジー検査
-                if tf.suffix == ".py":
-                    try:
-                        tree = ast.parse(content, filename=str(tf))
-                        for node in ast.walk(tree):
-                            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
-                                is_valid, reason = check_python_test_validity(node)
-                                if not is_valid:
-                                    print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{node.name} - {reason}", file=sys.stderr)
-                                    continue
-                                total_tests += 1
-                                # 異常系判定: docstring または関数名、ノード内の文字列
-                                func_text = ast.get_source_segment(content, node) or ""
-                                if NEGATIVE_TEST_PATTERN.search(node.name) or NEGATIVE_TEST_PATTERN.search(func_text):
-                                    negative_tests += 1
+            # Python の場合は AST で関数単位の厳格スコープ解析
+            if tf.suffix == ".py":
+                try:
+                    tree = ast.parse(content, filename=str(tf))
+                    for node in ast.walk(tree):
+                        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
+                            is_valid, reason = check_python_test_validity(node)
+                            if not is_valid:
+                                print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{node.name} - {reason}", file=sys.stderr)
+                                continue
+
+                            total_tests += 1
+                            func_text = ast.get_source_segment(content, node) or ""
+                            # 直前3行コメント
+                            pre_comments = get_preceding_comments(lines, node.lineno - 1, max_lines=3)
+                            combined_scope_text = f"{pre_comments}\n{node.name}\n{func_text}"
+
+                            if NEGATIVE_TEST_PATTERN.search(node.name) or NEGATIVE_TEST_PATTERN.search(func_text):
+                                negative_tests += 1
+
+                            # 有効関数スコープ内の REQ-* のみバインド
+                            found_reqs = set(REQ_PATTERN.findall(combined_scope_text))
+                            for req_id in found_reqs:
+                                if req_id in reqs:
+                                    ref_label = f"{tf.name}:{node.name}"
+                                    if ref_label not in reqs[req_id].test_refs:
+                                        reqs[req_id].test_refs.append(ref_label)
+                    continue
+                except SyntaxError:
+                    pass
+
+            # TS/JS/Rust テストブロック単位解析
+            idx = 0
+            num_lines = len(lines)
+            while idx < num_lines:
+                line = lines[idx]
+                if TEST_FUNC_PATTERN.search(line):
+                    # テストブロックの抽出 (次のテスト開始または15行)
+                    block_lines = [line]
+                    j = idx + 1
+                    while j < num_lines and j < idx + 30:
+                        if TEST_FUNC_PATTERN.search(lines[j]):
+                            break
+                        block_lines.append(lines[j])
+                        j += 1
+                    block_chunk = "\n".join(block_lines)
+
+                    # 1. トートロジー検査
+                    if "assert True" in block_chunk or "assert 1 == 1" in block_chunk or "expect(true).toBe(true)" in block_chunk:
+                        print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{line.strip()}", file=sys.stderr)
+                        idx = j
                         continue
-                    except SyntaxError:
-                        pass
 
-                # TS/JS/Rust または AST パース失敗時のフォールバック
-                lines = content.splitlines()
-                for idx, line in enumerate(lines):
-                    if TEST_FUNC_PATTERN.search(line):
-                        # 簡易トートロジー検査
-                        next_chunk = "\n".join(lines[idx:idx+15])
-                        if "assert True" in next_chunk or "assert 1 == 1" in next_chunk or "expect(true).toBe(true)" in next_chunk:
-                            print(f"⚠️ [トートロジーテスト検知・無効化] {tf.name}:{line.strip()}", file=sys.stderr)
-                            continue
-                        total_tests += 1
-                        if NEGATIVE_TEST_PATTERN.search(line) or NEGATIVE_TEST_PATTERN.search(next_chunk):
-                            negative_tests += 1
-                    elif "@test_type: negative" in line:
+                    # 2. 浅いアリバイテスト検査 (toBeInTheDocument等のみで操作・副作用検証なし)
+                    has_deep_interaction = bool(DEEP_INTERACTION_PATTERN.search(block_chunk))
+                    assert_lines = [ln.strip() for ln in block_lines if "expect(" in ln or "assert" in ln]
+                    all_shallow = (
+                        len(assert_lines) > 0 and
+                        all(SHALLOW_ASSERT_ONLY.search(aln) for aln in assert_lines) and
+                        not has_deep_interaction
+                    )
+                    if all_shallow:
+                        print(f"⚠️ [浅いアリバイテスト検知・無効化] {tf.name}:{line.strip()} (DOM存在確認のみ・状態検証なし)", file=sys.stderr)
+                        idx = j
+                        continue
+
+                    total_tests += 1
+                    if NEGATIVE_TEST_PATTERN.search(line) or NEGATIVE_TEST_PATTERN.search(block_chunk):
                         negative_tests += 1
+
+                    pre_comments = get_preceding_comments(lines, idx, max_lines=3)
+                    combined_scope = f"{pre_comments}\n{block_chunk}"
+                    found_reqs = set(REQ_PATTERN.findall(combined_scope))
+                    for req_id in found_reqs:
+                        if req_id in reqs:
+                            ref_label = f"{tf.name}:{line.strip()[:30]}"
+                            if ref_label not in reqs[req_id].test_refs:
+                                reqs[req_id].test_refs.append(ref_label)
+                    idx = j
+                else:
+                    if "@test_type: negative" in line:
+                        negative_tests += 1
+                    idx += 1
         except Exception:
             pass
 
     return total_tests, negative_tests
 
-def generate_rtm_markdown(reqs: dict[str, Requirement], total_tests: int, neg_tests: int, neg_ratio: float) -> str:
+def check_coverage(root: Path, custom_path: str | None, min_coverage: float) -> tuple[bool, str, dict]:
+    """動的カバレッジ（Branch / Line）検証 (V3.0.0)"""
+    candidate_paths = []
+    if custom_path:
+        candidate_paths.append(Path(custom_path))
+    candidate_paths.extend([
+        root / "coverage" / "coverage-summary.json",
+        root / "metrics" / "coverage.json"
+    ])
+
+    cov_file = None
+    for p in candidate_paths:
+        if p.is_file():
+            cov_file = p
+            break
+
+    if not cov_file:
+        return True, "カバレッジファイル未検出 (スキップ)", {}
+
+    try:
+        data = json.loads(cov_file.read_text(encoding="utf-8"))
+        total = data.get("total", data)
+        lines_pct = total.get("lines", {}).get("pct", 100.0)
+        branches_pct = total.get("branches", {}).get("pct", 100.0)
+
+        cov_summary = {"file": str(cov_file), "lines_pct": lines_pct, "branches_pct": branches_pct}
+        if lines_pct < min_coverage or branches_pct < min_coverage:
+            msg = f"カバレッジ基準未達 (Line: {lines_pct:.1f}%, Branch: {branches_pct:.1f}%, 基準: {min_coverage:.1f}%)"
+            return False, msg, cov_summary
+        return True, f"カバレッジ基準達成 (Line: {lines_pct:.1f}%, Branch: {branches_pct:.1f}%)", cov_summary
+    except Exception as e:
+        return False, f"カバレッジファイル解析エラー: {e}", {}
+
+def generate_rtm_markdown(reqs: dict[str, Requirement], total_tests: int, neg_tests: int, neg_ratio: float, cov_msg: str = "") -> str:
     lines = [
         "# 要件トレーサビリティマトリクス (RTM: Requirements Traceability Matrix)",
         "",
-        "- **生成ツール**: `scripts/traceability_checker.py` (Profile E)",
+        "- **生成ツール**: `scripts/traceability_checker.py` (V3.0.0 Executable Contract)",
         f"- **要件総数**: {len(reqs)} 件",
         f"- **総テストケース数**: {total_tests} 件 (うち異常系・境界値: {neg_tests} 件, 異常系比率: {neg_ratio:.1f}%)",
-        "",
-        "| 要件ID | 分類 | 要件概要 | 基本設計反映 | テスト反映 | 充足ステータス |",
-        "| :--- | :---: | :--- | :--- | :--- | :---: |"
     ]
+    if cov_msg:
+        lines.append(f"- **動的カバレッジ検証**: {cov_msg}")
+    lines.extend([
+        "",
+        "| 要件ID | 分類 | 要件概要 | 基本設計反映 | テスト関数直結反映 | 充足ステータス |",
+        "| :--- | :---: | :--- | :--- | :--- | :---: |"
+    ])
     for r in sorted(reqs.values(), key=lambda x: x.req_id):
-        d_str = ", ".join(set(r.design_refs)) if r.design_refs else "❌ 未反映"
-        t_str = ", ".join(set(r.test_refs)) if r.test_refs else "❌ 未検証"
+        d_str = ", ".join(sorted(set(r.design_refs))) if r.design_refs else "❌ 未反映"
+        t_str = ", ".join(sorted(set(r.test_refs))) if r.test_refs else "❌ 未検証"
         status = "✅ PASS" if (r.design_refs and r.test_refs) else "🚨 BLOCKED"
         lines.append(f"| {r.req_id} | {r.category} | {r.title} | {d_str} | {t_str} | {status} |")
     lines.append("")
     return "\n".join(lines)
 
 def main():
-    parser = argparse.ArgumentParser(description="Requirements Traceability Matrix Verifier")
+    parser = argparse.ArgumentParser(description="Requirements Traceability Matrix Verifier (V3.0.0)")
     parser.add_argument("--mode", choices=["design", "full"], default="full",
                         help="Verification mode: 'design' for Phase 3, 'full' for Phase 6/7")
     parser.add_argument("--min-negative-ratio", type=float, default=20.0,
                         help="Minimum negative test ratio percentage (default: 20.0%%)")
+    parser.add_argument("--coverage-json", type=str, default=None,
+                        help="Path to coverage summary JSON (default: auto-detect coverage/coverage-summary.json)")
+    parser.add_argument("--min-coverage", type=float, default=70.0,
+                        help="Minimum code coverage percentage (default: 70.0%%)")
     args = parser.parse_args()
 
     root = Path.cwd()
@@ -226,7 +338,9 @@ def main():
     neg_ratio = (neg_tests / total_tests * 100) if total_tests > 0 else 0.0
     test_uncovered = [r for r in reqs.values() if not r.test_refs]
 
-    rtm_md = generate_rtm_markdown(reqs, total_tests, neg_tests, neg_ratio)
+    cov_ok, cov_msg, _ = check_coverage(root, args.coverage_json, args.min_coverage)
+
+    rtm_md = generate_rtm_markdown(reqs, total_tests, neg_tests, neg_ratio, cov_msg)
     rtm_path = root / "docs" / "plans" / "要件トレーサビリティマトリクス(RTM).md"
     rtm_path.parent.mkdir(parents=True, exist_ok=True)
     rtm_path.write_text(rtm_md, encoding="utf-8")
@@ -242,6 +356,10 @@ def main():
     if total_tests > 0 and neg_ratio < args.min_negative_ratio:
         has_error = True
         print(f"🚨 [RTM BLOCKED] 異常系テスト比率が基準未満です ({neg_ratio:.1f}% < 基準 {args.min_negative_ratio:.1f}%)", file=sys.stderr)
+
+    if not cov_ok:
+        has_error = True
+        print(f"🚨 [RTM BLOCKED] {cov_msg}", file=sys.stderr)
 
     if has_error:
         sys.exit(1)

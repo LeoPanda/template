@@ -60,6 +60,9 @@ def render_markdown(s: dict) -> str:
     qual_score = scores.get("quality", scores.get("品質・堅牢性", "-"))
     evo_score = scores.get("evolution", scores.get("ナレッジ進化", "-"))
     gov_score = scores.get("governance", scores.get("ガバナンス", "-"))
+
+    traits = meta.get("capability_traits", [])
+    traits_str = f" + Trait: {', '.join(traits)}" if traits else ""
     
     lines = [
         "# プロジェクト進行状態管理票 (PROJECT_STATE)",
@@ -68,8 +71,9 @@ def render_markdown(s: dict) -> str:
         f"- **現在のステータス**: {s.get('current_status', 'PHASE_1_SETUP')}",
         "- **システム展開プロファイル**:",
         "  - 第1層 (定常コア): Universal Core Specifications (Anti-God Component 250行制限 / 型同期 / Pydantic Settings / Aware UTC / CI / 構造化ログ / モック制御 / グランドデザイン) 適用中",
-        f"  - 第2層 (展開プロファイル): {meta.get('deployment_profile', 'Profile A')}",
+        f"  - 第2層 (展開プロファイル): {meta.get('deployment_profile', 'Profile A')}{traits_str}",
         f"- **モック動作モード (MOCK_MODE)**: {meta.get('mock_mode', 'ENABLED')}",
+        f"- **セッション動作モード (SESSION_MODE)**: {meta.get('session_mode', 'DEV_PIPELINE')}",
         f"- **現行バージョン**: v{meta.get('app_version', '1.0.0')}",
         f"- **EXECUTION_MODE**: {meta.get('execution_mode', 'GLOBAL_PLUGIN')}",
         f"- **TEMPLATE_SOURCE**: {meta.get('template_source', '~/.gemini/config/plugins/system-dev-pipeline')}",
@@ -136,16 +140,19 @@ def render_markdown(s: dict) -> str:
 
 def cmd_init(args):
     schema_path = Path(__file__).resolve().parent.parent / "templates" / "project_state.schema.json"
+    traits = [t.strip() for t in args.traits.split(",") if t.strip()] if getattr(args, "traits", None) else []
     state = {
-        "schema_version": "2.6.2",
+        "schema_version": "3.0.0",
         "project_metadata": {
             "project_name": args.name or Path.cwd().name,
             "app_version": args.version or "1.0.0",
             "deployment_profile": args.profile or "Profile A",
+            "capability_traits": traits,
+            "session_mode": "DEV_PIPELINE",
             "mock_mode": "ENABLED",
             "execution_mode": "GLOBAL_PLUGIN",
             "template_source": "~/.gemini/config/plugins/system-dev-pipeline",
-            "knowledge_hub_status": "SYNCED (Immutable Core v2.6.2 + Local Overlay)",
+            "knowledge_hub_status": "SYNCED (Immutable Core v3.0.0 + Local Overlay)",
             "current_branch": "main",
             "updated_at": now_iso(),
             "updated_by": "conductor",
@@ -202,6 +209,23 @@ def cmd_init(args):
         "infrastructure": {"git_commit": "-", "remote_url": "-", "container_status": "STOPPED", "production_url": "-"}
     }
     save_and_render(state)
+
+def cmd_set_mode(args):
+    state = load_state()
+    mode = args.mode.upper()
+    if mode not in ("DEV_PIPELINE", "CONTENT_PRODUCTION"):
+        print(f"❌ 不正なセッションモードです: {mode} (DEV_PIPELINE または CONTENT_PRODUCTION を指定してください)", file=sys.stderr)
+        sys.exit(1)
+    state.setdefault("project_metadata", {})["session_mode"] = mode
+    save_and_render(state)
+    print(f"🔄 セッションモードを {mode} に更新しました。")
+
+def cmd_set_traits(args):
+    state = load_state()
+    traits = [t.strip() for t in args.traits.split(",") if t.strip()]
+    state.setdefault("project_metadata", {})["capability_traits"] = traits
+    save_and_render(state)
+    print(f"🔄 Capability Traits を更新しました: {traits}")
 
 def normalize_phase_key(phase: str) -> str:
     p = phase.upper()
@@ -271,11 +295,27 @@ def cmd_record_review(args):
 
 def cmd_record_approval(args):
     state = load_state()
+    p_norm = args.phase.upper().replace("-", "_")
+    approver = args.approver or "user"
+
+    # 改訂フェーズ (REV_1〜REV_6) の場合
+    if p_norm.startswith("REV_"):
+        rev = state.setdefault("revisions", {})
+        rev_phases = rev.setdefault("rev_phases", {})
+        rev_target = rev_phases.setdefault(p_norm, {})
+        rev_target["approved"] = True
+        rev_target["approved_at"] = now_iso()
+        rev_target["approver"] = approver
+        rev_target["status"] = "COMPLETED"
+        save_and_render(state)
+        print(f"✅ 改訂フェーズ {p_norm} のユーザー承認を記録しました (Approver: {approver})")
+        return
+
     ph = state.get("phases", {}).get(args.phase, {})
     gate = ph.setdefault("approval_gate", {})
     gate["approved"] = True
     gate["approved_at"] = now_iso()
-    gate["approver"] = args.approver or "user"
+    gate["approver"] = approver
     ph["status"] = "COMPLETED"
     save_and_render(state)
 
@@ -342,7 +382,7 @@ def cmd_verify_integrity(args):
     sys.exit(1)
 
 def scaffold_revision_plan(rid: str, title: str):
-    """start-revision 実行時に REV-1〜REV-5 準拠の計画スケルトンを自動生成する"""
+    """start-revision 実行時に REV-1〜REV-6 準拠の計画スケルトンを自動生成する (V3.0.0)"""
     plans_dir = Path(f"docs/plans/{rid}改訂計画")
     plans_dir.mkdir(parents=True, exist_ok=True)
     
@@ -373,24 +413,33 @@ def scaffold_revision_plan(rid: str, title: str):
 
 ---
 
-## 2. 標準改訂フェーズ (REV-1〜REV-5) チェックリスト
+## 2. 標準改訂フェーズ (REV-1〜REV-6) チェックリスト
 
-- [ ] **REV-1: 要件・設計精査 (Planning & Design)**
+- [ ] **REV-1: 要件・設計・契約フィクスチャ精査 (Planning, Design & Contracts)**
   - [ ] 差分要件定義書起草・精査 (`[REQ-Fxx]`, `[REQ-NFxx]`)
   - [ ] 差分基本設計書起草（技術・スキーマ・ロジック・画面仕様書）
+  - [ ] Executable Golden Fixtures (`tests/fixtures/golden/`) 配置
   - [ ] 基本設計レビュー (`dev-review-arch` / `traceability_checker.py --mode design`) PASS
-- [ ] **REV-2: 実装・静的検証 (Implementation & Hard Gate)**
-  - [ ] バックエンド/フロントエンド差分実装（行数制限 250/400 遵守、直書きモック排除）
+- [ ] **REV-2: 実装・静的検証・Stage 1.5 スモーク (Implementation, Hard Gate & Smoke)**
+  - [ ] バックエンド/フロントエンド差分実装（行数制限 2段階緩衝帯 250/350, 400/550 遵守、空実装排除）
+  - [ ] OpenAPI型同期 (Contract-First MSW)
+  - [ ] Stage 1.5 インプロセス実I/O・物理ファイル生成＆パーサー検証
   - [ ] コミット前 Hard Gate (`python3 scripts/harness_guard.py --all`) PASS
-- [ ] **REV-3: テスト・視認レビュー (Verification & Sensory)**
+- [ ] **REV-3: 自動テスト・実結合E2E・感覚センサー検証 (Automated E2E & Sensory)**
   - [ ] シナリオテスト拡充（異常系比率20%以上、3階層深層アサーション、トートロジー排除）
-  - [ ] モック切替・実データ一気通貫E2E検証
+  - [ ] Stage 2 モックOFF (`VITE_ENABLE_MOCK=false`) 実データ一気通貫E2E検証
   - [ ] ブラウザ感覚センサー検証（コンソールエラー0件、WCAG AA 4.5:1）
-- [ ] **REV-4: 本番総合監査・成果物ビルド (System Review & Build)**
+  - [ ] `traceability_checker.py --mode full` PASS & `qa_runtime_evidence.json` 出力
+- [ ] **REV-4: 開発サーバー起動・ユーザー実機レビュー・改修 (User Live Review & Refinement)**
+  - [ ] 実結合モード開発サーバー（Docker / Uvicorn + Vite dev / Tauri dev）起動
+  - [ ] ユーザーへの実機動作デモ提示と実機テストレビュー要請
+  - [ ] ユーザー指摘事項の対話的改修・再検証ループ
+  - [ ] ユーザー実機レビュー承認取得 (`python3 scripts/state_manager.py record-approval --phase REV_4`)
+- [ ] **REV-5: 本番総合監査・成果物ビルド (System Review & Production Build)**
   - [ ] コード品質レビュー (`dev-review-code`) CLEAN
   - [ ] システム総合レビュー (`dev-review-system`) RELEASE APPROVED
   - [ ] 本番成果物の物理ビルド（Profile D: `npm run tauri build` / Profile A: 本番コンテナ確認）
-- [ ] **REV-5: メトリクス・知見昇格・リリース (Metrics & Closure)**
+- [ ] **REV-6: メトリクス・知見昇格・リリース (Metrics, Evolution & Closure)**
   - [ ] 定量メトリクス集計 (`python3 scripts/metrics_collector.py --all --sync-state`)
   - [ ] RCA知見の整理・昇格 (`wiki-proposer`, `TEMPLATE_PROMOTIONS.md` 承認・反映)
   - [ ] Invariants Gate 自動検証 (`python3 scripts/state_manager.py complete-revision`) PASS
@@ -407,11 +456,12 @@ def scaffold_revision_plan(rid: str, title: str):
         print(f"📄 改訂計画スケルトンを自動生成しました: {plan_file}")
 
     step_templates = [
-        ("REV-1_要件・設計精査手順書.md", "REV-1: 要件定義・基本設計・RTM設計カバレッジ検証の手順"),
-        ("REV-2_実装・静的検証手順書.md", "REV-2: 実装・行数制限遵守・harness_guard検証の手順"),
-        ("REV-3_テスト・視認レビュー手順書.md", "REV-3: シナリオテスト・深層アサーション・ブラウザ感覚センサー検証の手順"),
-        ("REV-4_本番総合監査・成果物ビルド手順書.md", "REV-4: 総合レビュー合格および本番バイナリ/成果物ビルドの手順"),
-        ("REV-5_メトリクス・知見昇格・リリース手順書.md", "REV-5: メトリクス集計・知見昇格・Invariants検証・クローズの手順"),
+        ("REV-1_要件・設計・契約フィクスチャ精査手順書.md", "REV-1: 要件定義・基本設計・Golden Fixture・RTM設計カバレッジ検証の手順"),
+        ("REV-2_実装・静的検証・Stage1.5スモーク手順書.md", "REV-2: 実装・2段階行数制限・harness_guard・Stage 1.5実I/Oスモーク検証の手順"),
+        ("REV-3_テスト・実結合E2E・感覚センサー検証手順書.md", "REV-3: シナリオテスト・モックOFF実結合E2E・感覚センサー・qa_runtime_evidence検証の手順"),
+        ("REV-4_開発サーバー起動・ユーザー実機レビュー・改修手順書.md", "REV-4: 開発サーバー起動・ユーザー実機テストレビュー・対話的改修の手順"),
+        ("REV-5_本番総合監査・成果物ビルド手順書.md", "REV-5: コード/システム総合レビュー合格および本番バイナリ/成果物ビルドの手順"),
+        ("REV-6_メトリクス・知見昇格・リリース手順書.md", "REV-6: メトリクス集計・知見昇格・Invariants検証・リリースの手順"),
     ]
     for filename, step_desc in step_templates:
         step_p = plans_dir / filename
@@ -475,6 +525,27 @@ def validate_revision_closure_invariants(state: dict):
                 " (実行必須: ask_question によるユーザー承認 & pipeline-reconciler.sh --activate-claim)"
             )
 
+    # 4. REV-4 ユーザー実機レビュー承認の検証 (V3.0.0)
+    rev_phases = state.get("revisions", {}).get("rev_phases", {})
+    rev_4 = rev_phases.get("REV_4", {})
+    if not rev_4.get("approved"):
+        violations.append(
+            "[INV-REV-04] REV-4（開発サーバー起動・ユーザー実機テストレビュー）のユーザー承認が記録されていません。"
+            " (実行必須: python3 scripts/state_manager.py record-approval --phase REV_4)"
+        )
+
+    # 5. 実結合QA実行証跡 (qa_runtime_evidence.json) 検証 (V3.0.0)
+    qa_evidence_path = Path("metrics/qa_runtime_evidence.json")
+    if qa_evidence_path.is_file():
+        try:
+            qa_data = json.loads(qa_evidence_path.read_text(encoding="utf-8"))
+            if not qa_data.get("mock_mode_disabled"):
+                violations.append("[INV-QA-01] metrics/qa_runtime_evidence.json で mock_mode_disabled が true になっていません (本番モックOFF未検証)。")
+            if qa_data.get("overall_status") != "PASS":
+                violations.append(f"[INV-QA-01] metrics/qa_runtime_evidence.json の overall_status が PASS ではありません (現状: {qa_data.get('overall_status')})。")
+        except Exception as e:
+            violations.append(f"[INV-QA-01] metrics/qa_runtime_evidence.json の解析に失敗しました: {e}")
+
     if violations:
         print("❌ [HARD GATE BLOCKED] 改訂完了前提条件 (Invariants) 違反を検出しました:", file=sys.stderr)
         for v in violations:
@@ -484,16 +555,25 @@ def validate_revision_closure_invariants(state: dict):
 
 def cmd_start_revision(args):
     state = load_state()
+    state.setdefault("project_metadata", {})["session_mode"] = "DEV_PIPELINE"
     rev = state.setdefault("revisions", {})
     rev["current_revision_status"] = "ACTIVE"
     rev["active_revision_id"] = args.id
+    rev["rev_phases"] = {
+        "REV_1": {"title": "要件・設計・契約フィクスチャ精査", "status": "IN_PROGRESS"},
+        "REV_2": {"title": "実装・静的検証・Stage 1.5 スモーク", "status": "PENDING"},
+        "REV_3": {"title": "自動テスト・実結合E2E・感覚センサー検証", "status": "PENDING"},
+        "REV_4": {"title": "開発サーバー起動・ユーザー実機レビュー・改修", "status": "PENDING", "approved": False, "approved_at": None, "approver": None},
+        "REV_5": {"title": "本番総合監査・成果物ビルド", "status": "PENDING"},
+        "REV_6": {"title": "メトリクス・知見昇格・リリース", "status": "PENDING"}
+    }
     branch_name = f"revision/{args.id}"
     try:
         subprocess.run(["git", "checkout", "-b", branch_name], check=False)
         state["project_metadata"]["current_branch"] = branch_name
     except Exception:
         pass
-    print(f"🚀 改訂起票: [{args.id}] {args.title} (Branch: {branch_name})")
+    print(f"🚀 改訂起票: [{args.id}] {args.title} (Branch: {branch_name}, SessionMode: DEV_PIPELINE)")
     scaffold_revision_plan(args.id, args.title)
     save_and_render(state)
 
@@ -534,6 +614,14 @@ def main():
 
     p_init = sub.add_parser("init")
     p_init.add_argument("--name", type=str); p_init.add_argument("--profile", type=str); p_init.add_argument("--version", type=str)
+    p_init.add_argument("--traits", type=str, help="Comma-separated capability traits (e.g. local-api,media-export)")
+
+    p_mode = sub.add_parser("set-mode")
+    p_mode.add_argument("--mode", type=str, required=True, choices=["DEV_PIPELINE", "CONTENT_PRODUCTION"])
+
+    p_traits = sub.add_parser("set-traits")
+    p_traits.add_argument("--traits", type=str, required=True, help="Comma-separated capability traits")
+
     p_phase = sub.add_parser("set-phase")
     p_phase.add_argument("phase", type=str)
     p_task = sub.add_parser("complete-task")
@@ -568,7 +656,8 @@ def main():
 
     args = p.parse_args()
     cmds = {
-        "init": cmd_init, "set-phase": cmd_set_phase, "complete-task": cmd_complete_task,
+        "init": cmd_init, "set-mode": cmd_set_mode, "set-traits": cmd_set_traits,
+        "set-phase": cmd_set_phase, "complete-task": cmd_complete_task,
         "record-review": cmd_record_review, "record-approval": cmd_record_approval,
         "sync-metrics": cmd_sync_metrics, "verify-integrity": cmd_verify_integrity,
         "start-revision": cmd_start_revision, "complete-revision": cmd_complete_revision

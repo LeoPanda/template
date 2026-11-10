@@ -66,7 +66,7 @@ description: "新規システム開発プロジェクトの環境初期化を行
 
 ## 5. 状態管理台帳・ドキュメント雛形の初期化 (Single Writer 原則)
 1. **状態管理台帳 (`project_state.json` / `PROJECT_STATE.md`) の初期化**:
-   - `python3 scripts/state_manager.py init --name <プロジェクト名> --profile <選定プロファイル>` を実行し、機械正本 `project_state.json` とビュー `PROJECT_STATE.md` を決定論的に初期生成します。
+   - `python3 scripts/state_manager.py init --name <プロジェクト名> --profile <選定プロファイル> [--traits <Traitsカンマ区切り>]` を実行し、機械正本 `project_state.json` とビュー `PROJECT_STATE.md` を決定論的に初期生成します。`capability_traits` および `session_mode`（デフォルト `DEV_PIPELINE`）が記録されます。
 2. **`TEMPLATE_PROMOTIONS.md` および Wiki 台帳の初期化**:
    - `PLUGIN_DIR/templates/TEMPLATE_PROMOTIONS.md.template` を `./TEMPLATE_PROMOTIONS.md` へ配置します。
    - `./wiki/logs.md`（時系列ログ表）および `./wiki/skill-impact.md`（影響マップ表）を初期化します。

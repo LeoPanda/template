@@ -1,8 +1,8 @@
 {
   "pipeline_name": "system-dev-pipeline",
-  "version": "2.6.2",
-  "released_at": "2026-11-05T16:00:00+09:00",
-  "invariants_version": "1.0.0",
+  "version": "3.0.0",
+  "released_at": "2026-11-10T08:30:00+09:00",
+  "invariants_version": "2.0.0",
   "absorbed_patterns": [
     {
       "pattern_id": "PAT-SYS-001",
@@ -425,6 +425,36 @@
         "scripts/state_manager.py"
       ],
       "summary": "開発メトリクス集計JSONのスキーマ整合性・エイリアスキー出力とState Manager自動同期"
+    },
+    {
+      "pattern_id": "PAT-SYS-015",
+      "claim_ids": [
+        "CLAIM-20261107-promotion-video-maker-PAT-SYS-015"
+      ],
+      "absorbed_in_version": "3.0.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/CORE_INVARIANTS.md",
+        "rules/AGENTS.md",
+        "templates/ビジネスロジック仕様書.md",
+        "templates/画面仕様書.md"
+      ],
+      "summary": "フレーム駆動型動的SVGレンダリングにおける決定論的キーによるインメモリキャッシュ(O(1))とメモリリーク防止"
+    },
+    {
+      "pattern_id": "PAT-SYS-016",
+      "claim_ids": [
+        "CLAIM-20261109-promotion-video-maker-PAT-SYS-016"
+      ],
+      "absorbed_in_version": "3.0.0",
+      "integration_type": "SUBSUMPTION",
+      "target_files": [
+        "rules/AGENTS.md",
+        "rules/CORE_INVARIANTS.md",
+        "scripts/harness_guard.py",
+        "scripts/state_manager.py"
+      ],
+      "summary": "自律的モード境界制御と操作パス監視（HG-011）によるScope Guard自律昇格・システムコード保護"
     }
   ]
 }

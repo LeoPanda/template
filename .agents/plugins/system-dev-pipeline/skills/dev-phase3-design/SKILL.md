@@ -15,13 +15,15 @@ description: "PHASE 3 基本設計書の自動作成および基本設計レビ�
 
 ---
 
-## 1. 担当設計書雛形の作成
+## 1. 担当設計書雛形の作成 & Executable Golden Fixtures 配置
 
-プラグインの `templates/` から以下のドキュメントを `docs/設計書/Current/` に保存・作成してください。
-- `docs/設計書/Current/技術要件定義書.md`: プロファイル適合構成、フロント責務分離（1ファイル最大250行制限）、型自動同期、Aware UTC保存/JST表示規約、標準コマンドシーケンス
-- `docs/設計書/Current/テーブルスキーマ定義書.md`: **生SQL手動DDLの絶対禁止**、Alembicマイグレーション前提設計、Aware UTC ISO8601規約、`user_id` 拡張性、Mermaid ER図
-- `docs/設計書/Current/ビジネスロジック仕様書.md`: 外部API二重キャッシュ戦略（TTLメモリ＋DB）、モック制御仕様（案C: `VITE_ENABLE_MOCK` ＋ 案A: 直書きモック排除）、内部監視エンドポイント（`health`, `litestream`）
-- `docs/設計書/Current/画面仕様書.md`: 🎨 `ui-designer` が担当。[01_グランドデザイン基本仕様書.md](../../templates/グランドデザイン/01_グランドデザイン基本仕様書.md) に準拠し、4px/8pxグリッド、HEX/px絶対値併記、ウィンドウ形態選定、キーボードショートカット表、直書きモック排除を反映。
+1. **Executable Golden Fixtures 配置 (`tests/fixtures/golden/`)**:
+   - 設計書本文への巨大サンプル直書き（トークン圧迫）を廃止し、期待入出力の具象サンプルを `tests/fixtures/golden/` 配下に実ファイル（例: `expected_output.json`, `expected_timeline.fcpxml`）として配置します。設計書からは相対リンクで参照します。
+2. **4大基本設計書と画面振る舞い契約の策定**:
+   - `docs/設計書/Current/技術要件定義書.md`: プロファイル適合構成、2段階行数制限、型自動同期、Aware UTC規約、標準コマンドシーケンス
+   - `docs/設計書/Current/テーブルスキーマ定義書.md`: 生SQL手動DDL絶対禁止、Alembic前提、Aware UTC、Mermaid ER図
+   - `docs/設計書/Current/ビジネスロジック仕様書.md`: 外部API二重キャッシュ、モック制御仕様、内部監視、Golden Fixtures 参照リンク
+   - `docs/設計書/Current/画面仕様書.md`: 🎨 `ui-designer` が担当。グランドデザイン準拠、インタラクション4列契約テーブル（操作トリガー、呼び出しAPI/Payload、状態変化、エラー時挙動）を策定。
 
 > [!IMPORTANT]
 > - `architect` はいかなる場合も `run_command` を呼び出してはなりません。

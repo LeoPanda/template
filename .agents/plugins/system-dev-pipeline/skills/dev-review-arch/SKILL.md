@@ -44,10 +44,13 @@ description: "PHASE 3 完了ゲートにおいて基本設計書群を多角的�
 9. **CI・静的解析・テスト実行ディレクトリ非依存**:
    - 静的解析競合抑止イディオムや実行ディレクトリ非依存パス方針が明記されているか。
 
-### 要件トレーサビリティ検証 (RTM Design Check)
+### 要件トレーサビリティ & 契約フィクスチャ検証
 - `python3 scripts/traceability_checker.py --mode design` を実行し、全要件（サブ要件含む）が基本設計書群に 100% 反映されていることを機械確認する。
+- **Executable Golden Fixtures 監査**: `tests/fixtures/golden/` 配下に期待入出力サンプルが実ファイル配置され、設計書から相対リンク参照されているか（巨大サンプル直書き排除の確認）。
+- **画面インタラクション契約監査**: 画面仕様書に4列契約（操作トリガー、呼び出しAPI/Payload、状態変化、エラー時挙動）が定義されているか。
 
-### 第2層: システム展開プロファイル別適合監査
+### 第2層: システム展開プロファイル ＆ Capability Traits 適合監査
+- **Capability Traits 適合性**: 選定された Trait（`+trait:local-api`, `+trait:media-export`, `+trait:frame-render`, `+trait:external-cli`, `+trait:dual-mode-workspace`）に応じた設計要件が基本設計書に反映されているか。
 - **Profile A (サーバーレス極小コストWeb型 / ゴールデンパス)**:
   - Cloud Run `max-instances=1` 制約の記載があるか。
   - **Alembic マイグレーション前提**（生SQL手動DDLの完全禁止、`alembic upgrade head` 起動適用）が明記されているか。
