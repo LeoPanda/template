@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from core.config import settings
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.resolved_database_url,
     connect_args={
         "check_same_thread": False,
         "timeout": 5.0,  # busy_timeout=5000ms: ロック解放待機

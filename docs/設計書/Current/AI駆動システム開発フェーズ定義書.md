@@ -1,8 +1,8 @@
 # AI駆動システム開発フェーズ定義書（軽量・実行契約駆動・6段階改訂パイプライン準拠版）
 
-文書バージョン: 3.0.1  
-改定日: 2026-11-10  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.1 (`APP_VERSION=3.0.1`)  
+文書バージョン: 3.1.0  
+改定日: 2026-11-13  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.1.0 (`APP_VERSION=3.1.0`)  
 ステータス: 正式改訂版 (Current 正本)  
 関連文書:
 - [AI駆動システム開発手順書.md](./AI駆動システム開発手順書.md)
@@ -40,6 +40,24 @@
 3. **【柱3】ドキュメント精査の2段階分離と REV-4 事前検査ゲート配備 (`[REQ-F-301-03]`)**:
    - ドキュメント精査を「第1段階: REV-3 文書衛生・構造整理 (Document Hygiene)」と「第2段階: REV-5 意味的相互整合性精査 (Semantic Cross-Check)」に分離。
    - REV-4 実機レビュー突入前に物理検査コマンド `state_manager.py verify-review-readiness`（Pre-Review Readiness Gate）を配備し、未通過時の `set-phase REV_4` 実行をインターロック遮断。
+
+### 1.3 V3.1.0 改訂の 4 大柱
+1. **【柱1】verify-review-readiness の Live Invariant Probe 昇格 (`[REQ-F-310-01]`)**:
+   - 静的署名検査から「実プロセス一時バックグラウンド起動（独立ポート・15秒タイムアウト保護・確実なプロセス回収）」へ昇格。
+   - `/api/health?deep=true` に対する実HTTP GETリクエストにより、実DBクエリ疎通（HTTP 200 OK & healthyレスポンス）を物理検証。
+   - 起動クラッシュ・500エラー・例外トレースバック（`sqlite3.OperationalError` 等）の完全捕捉と `[READINESS BLOCK]` による物理ハード遮断。
+2. **【柱2】環境適応耐性 (Core-Absorbed Resilience) のスケルトン標準化 (`[REQ-F-310-02]`)**:
+   - `Smart Database URL & Path Resolver` を共通スケルトンへ配備。コンテナ内絶対パス（`/app/data`）がホスト上に存在しない場合、プロジェクトルート相対の `data/` へ自律フォールバックし、ディレクトリを自動作成（`os.makedirs(..., exist_ok=True)`）。
+   - テスト側（`conftest.py` 等）で環境変数を書き換えてパス乖離をマスキングする動機そのものを根絶。
+3. **【柱3】起動時フェイルファスト検証 (Fail-Fast Lifespan) の義務化 (`[REQ-F-310-02]`)**:
+   - FastAPI `lifespan` 起動フック内で SQLAlchemy `engine.connect()` による初期DB疎通を強制。
+   - パス不一致や権限不正、マイグレーション未完了がある場合、リクエスト待機に入らず起動シーケンス内で即座に例外停止（Fail-Fast）。
+4. **【柱4】テストステージ体系の 3ステージ統合 & 規約体系更新 (`[REQ-F-310-03]`)**:
+   - 複雑化・細分化したステージ（Stage 1.5, 1.8等）を廃止し、洗練された「3ステージ体系」へ統合：
+     - **Stage 1: Unit & Contract**: 単体テスト、Pydantic DTO検証、FastAPI `TestClient` によるインプロセス実I/O・OpenAPIスキーマ検証。
+     - **Stage 2: Readiness Live Probe**: `verify-review-readiness` によるプロセス分離起動・実HTTP疎通・DB実クエリ検証（REV-4突入の絶対不変条件）。
+     - **Stage 3: Full-Stack E2E & Sensorial**: フロント・バック同時稼働下での実結合E2E、感覚センサー（コンソールエラー0件、WCAG AA 4.5:1）検証。
+   - 「ホワイトボックス構文規制からブラックボックス実動不変条件（Live Readiness Invariant）へのパラダイムシフト」。
 
 ---
 
@@ -229,21 +247,21 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    REV1["REV-1: 要件・設計・契約フィクスチャ精査<br>（起票・Golden Fixture・RTM設計PASS）"] --> REV2["REV-2: 実装・静的検証・Stage 1.5<br>（BE/FE実装・Hard Gate HG-002・実I/Oスモーク）"]
-    REV2 --> REV3["REV-3: 自動テスト・実結合E2E・感覚検証<br>（モックOFF E2E・証跡自動生成・第1段階衛生整理・事前検査PASS）"]
-    REV3 --> REV4["REV-4: 開発サーバー起動・ユーザー実機レビュー<br>（事前検査インターロック・実機確認・対話的改修・ユーザー承認）"]
+    REV1["REV-1: 要件・設計・契約フィクスチャ精査<br>（差分要件 REQ-F-310-01〜03・Golden Fixture・RTM設計PASS）"] --> REV2["REV-2: 実装・静的検証・Stage 1 スモーク<br>（BE/FE実装・Hard Gate HG-002・Stage 1 実I/Oスモーク）"]
+    REV2 --> REV3["REV-3: 自動テスト・実結合E2E・Stage 2 Live Probe<br>（モックOFF E2E・証跡自動生成・第1段階衛生整理・Live Probe PASS）"]
+    REV3 --> REV4["REV-4: 開発サーバー起動・ユーザー実機レビュー<br>（Live Probe インターロック・Stage 3 実機確認・対話的改修・ユーザー承認）"]
     REV4 --> REV5["REV-5: 本番総合監査・成果物ビルド<br>（第2段階相互整合性精査・3大レビュー合格・成果物ビルド）"]
     REV5 --> REV6["REV-6: メトリクス・知見昇格・リリース<br>（集計・Hub昇格・証跡検証 INV-QA-01・完了）"]
 ```
 
 1. **REV-1: 要件・設計・契約フィクスチャ精査**:
-   - `state_manager.py start-revision` による計画スケルトン自動展開と `session_mode = "DEV_PIPELINE"` 昇格。差分要件定義、4大基本設計書更新、`tests/fixtures/golden/` 配置、`dev-review-arch` PASS。
-2. **REV-2: 実装・静的検証・Stage 1.5 スモーク**:
-   - 2段階行数制限（250/350行、400/550行）、本番コードモック・ダミー完全排除（`HG-002`）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1.5 インプロセス実I/Oスモークテスト、`harness_guard.py --all` PASS。
-3. **REV-3: 自動テスト・実結合E2E・感覚センサー検証**:
-   - テスト関数直結 RTM 検証（`traceability_checker.py --mode full`）、Stage 2 モックOFF実データ一気通貫E2E検証、感覚センサー検証、署名付き動的証跡（`metrics/qa_runtime_evidence.json`）自動生成。第1段階ドキュメント衛生・構造整理を実施し、`state_manager.py verify-review-readiness` PASS を確認。
-4. **REV-4: 開発サーバー起動・ユーザー実機レビュー・改修**:
-   - REV-4 実機レビュー突入前に物理検査コマンド `state_manager.py verify-review-readiness`（Pre-Review Readiness Gate）PASS をインターロック前提条件として実結合開発サーバー起動、ユーザー実機テストレビュー要請、対話的改修ループ、ユーザー承認記録（`state_manager.py record-approval --phase REV_4`）。
+   - `state_manager.py start-revision` による計画スケルトン自動展開と `session_mode = "DEV_PIPELINE"` 昇格。差分要件定義（`REQ-F-310-01`〜`03`）、4大基本設計書更新、`tests/fixtures/golden/` 配置、`dev-review-arch` PASS。
+2. **REV-2: 実装・静的検証・Stage 1 スモーク**:
+   - 2段階行数制限（250/350行、400/550行）、本番コードモック・ダミー完全排除（`HG-002`）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1 (Unit & Contract) インプロセス実I/Oスモークテスト、`harness_guard.py --all` PASS。
+3. **REV-3: 自動テスト・実結合E2E・Stage 2 Live Probe 検証**:
+   - テスト関数直結 RTM 検証（`traceability_checker.py --mode full`）、Stage 2 モックOFF実データ一気通貫E2E検証、感覚センサー検証、署名付き動的証跡（`metrics/qa_runtime_evidence.json`）自動生成。第1段階ドキュメント衛生・構造整理を実施し、`state_manager.py verify-review-readiness` による Stage 2 Live Probe PASS（独立サブプロセス起動・Deep Health実DBクエリ疎通）を確認。
+4. **REV-4: 開発サーバー起動・ユーザー実機レビュー・対話的改修**:
+   - REV-4 実機レビュー突入前に物理検査コマンド `state_manager.py verify-review-readiness`（Stage 2 Live Probe）PASS をインターロック前提条件として実結合開発サーバー起動、Stage 3 フルスタック実機確認、ユーザー実機テストレビュー要請、対話的改修ループ、ユーザー承認記録（`state_manager.py record-approval --phase REV_4`）。
 5. **REV-5: 本番総合監査・成果物ビルド**:
    - 第2段階ドキュメント意味的相互整合性精査、コード品質レビュー（`dev-review-code`: CLEAN）、システム総合レビュー（`dev-review-system`: RELEASE APPROVED）、本番成果物の物理ビルド。
 6. **REV-6: メトリクス・知見昇格・リリース**:
@@ -270,3 +288,4 @@ flowchart LR
 | 2.6.0 | 2026-10-26 | - | 初回Current正本化 |
 | 3.0.0 | 2026-11-10 | PLAN-V300-001 | 軽量・実行契約駆動パイプライン進化 (Golden Fixtures、2段階行数制限、Stage 1.5/2、6段階改訂 REV-1〜REV-6、自律昇格) |
 | 3.0.1 | 2026-11-10 | PLAN-V301-001 | 本番コードモック完全排除(HG-002)、署名付き動的証跡生成・状態台帳改ざん検証(REQ-F-301-02)、2段階ドキュメント精査・REV-4事前物理検査ゲート(REQ-F-301-03) |
+| 3.1.0 | 2026-11-13 | PLAN-V310-001 | verify-review-readiness の Live Invariant Probe 昇格(REQ-F-310-01)、環境適応耐性スケルトン・Fail-Fast Lifespan 標準化(REQ-F-310-02)、3ステージテスト体系統合(REQ-F-310-03) |

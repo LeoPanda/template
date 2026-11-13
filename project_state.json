@@ -1,0 +1,276 @@
+{
+  "schema_version": "3.0.0",
+  "project_metadata": {
+    "project_name": "system-dev-pipeline",
+    "app_version": "3.1.0",
+    "deployment_profile": "Profile E",
+    "capability_traits": [],
+    "session_mode": "DEV_PIPELINE",
+    "mock_mode": "DISABLED",
+    "execution_mode": "GLOBAL_PLUGIN",
+    "template_source": "~/.gemini/config/plugins/system-dev-pipeline",
+    "knowledge_hub_status": "SYNCED (Immutable Core v3.0.0 + Local Overlay)",
+    "current_branch": "main",
+    "updated_at": "2026-11-13T11:58:00.596271+09:00",
+    "updated_by": "conductor",
+    "md_checksum": "sha256:583aab3054ca31f389a7d02875911ecd3bb08823ad449882b3644e904032ce21"
+  },
+  "current_status": "REV-6",
+  "phases": {
+    "PHASE_1": {
+      "status": "IN_PROGRESS",
+      "title": "プロジェクトの準備",
+      "tasks": [
+        {
+          "id": "P1-T01",
+          "title": "ディレクトリ・環境設定展開 (dev-phase1-setup)",
+          "done": true
+        },
+        {
+          "id": "P1-T02",
+          "title": "Central Knowledge Hub 初期化 & 未処理原票確認",
+          "done": true
+        },
+        {
+          "id": "P1-T03",
+          "title": "静的スケルトン基盤展開",
+          "done": true
+        },
+        {
+          "id": "P1-T04",
+          "title": "環境変数初期化 (.env)",
+          "done": true
+        }
+      ]
+    },
+    "PHASE_2": {
+      "status": "PENDING",
+      "title": "要件定義",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P2-T01",
+          "title": "要件定義書作成・精査 (REQ-ID付与)",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_3": {
+      "status": "PENDING",
+      "title": "基本設計書の作成と整合性チェック",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P3-T01",
+          "title": "4大基本設計書作成",
+          "done": false
+        },
+        {
+          "id": "P3-T02",
+          "title": "基本設計レビュー (dev-review-arch) PASS",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_4": {
+      "status": "PENDING",
+      "title": "開発環境とシステム構築",
+      "tasks": [
+        {
+          "id": "P4-T01",
+          "title": "Docker/環境構築 & BE/FE実装",
+          "done": false
+        },
+        {
+          "id": "P4-T02",
+          "title": "Git初期化 (dev-git-init)",
+          "done": false
+        },
+        {
+          "id": "P4-T03",
+          "title": "Hard Gate (harness_guard.py) & CI検証 PASS",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_5": {
+      "status": "PENDING",
+      "title": "ウォークスルー動作確認とデバッグ",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P5-T01",
+          "title": "ブラウザ感覚センサー検証 (Chrome DevTools MCP)",
+          "done": false
+        },
+        {
+          "id": "P5-T02",
+          "title": "モック切替検証 & API仕様書同期",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_5_5": {
+      "status": "PENDING",
+      "title": "コード品質・整合性レビュー",
+      "tasks": [
+        {
+          "id": "P55-T01",
+          "title": "dev-review-code (CLEAN判定)",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_6": {
+      "status": "PENDING",
+      "title": "スルーテスト環境の構築と実施",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P6-T01",
+          "title": "シナリオテスト & RTM検証 (traceability_checker.py)",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_7": {
+      "status": "PENDING",
+      "title": "本番リリース",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P7-T01",
+          "title": "dev-review-system (RELEASE APPROVED)",
+          "done": false
+        },
+        {
+          "id": "P7-T02",
+          "title": "本番デプロイ & セキュリティ検証",
+          "done": false
+        }
+      ]
+    },
+    "PHASE_8": {
+      "status": "PENDING",
+      "title": "知見自己進化・メトリクス集計",
+      "approval_gate": {
+        "required": true,
+        "approved": false
+      },
+      "tasks": [
+        {
+          "id": "P8-T01",
+          "title": "メトリクス集計 & 知見原票投函 (CLAIM-*)",
+          "done": false
+        },
+        {
+          "id": "P8-T02",
+          "title": "本番リリース (dev-git-release)",
+          "done": false
+        }
+      ]
+    }
+  },
+  "review_gates": {
+    "arch_review": {
+      "verdict": "PENDING",
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "code_review": {
+      "verdict": "CLEAN",
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "report_path": "docs/plans/コード品質レビュー及びリファクタリング提案書.md",
+      "updated_at": "2026-11-13T11:52:02.527314+09:00"
+    },
+    "system_review": {
+      "verdict": "RELEASE APPROVED",
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "report_path": "docs/plans/システム総合レビュー結果報告書.md",
+      "updated_at": "2026-11-13T11:52:18.696260+09:00"
+    }
+  },
+  "metrics_summary": {
+    "total_score": 67.5,
+    "grade": "C (改善推奨 / Needs Improvement)",
+    "category_scores": {
+      "resource": 14.55,
+      "quality": 35.0,
+      "evolution": 0.0,
+      "governance": 18.0
+    },
+    "total_tokens": 32474227,
+    "total_tool_calls": 6256,
+    "net_loc": 52898,
+    "last_collected_at": "2026-11-13T11:54:16.632548+09:00"
+  },
+  "revisions": {
+    "current_revision_status": "IDLE",
+    "active_revision_id": null,
+    "current_turn": null,
+    "history": [
+      {
+        "id": "PLAN-V310-001",
+        "title": "Live Invariant Probe・環境適応耐性の標準化と3ステージ体系統合",
+        "version": "3.1.0",
+        "turn": "1",
+        "author": "conductor",
+        "status": "COMPLETED",
+        "started_at": "2026-11-13T11:54:16.633309+09:00",
+        "completed_at": "2026-11-13T11:55:19.697516+09:00",
+        "branch": "main"
+      }
+    ],
+    "rev_phases": {
+      "REV_4": {
+        "approved": true,
+        "approved_at": "2026-11-13T11:47:07.336931+09:00",
+        "approver": "user",
+        "status": "COMPLETED"
+      },
+      "REV_5": {
+        "approved": true,
+        "approved_at": "2026-11-13T11:53:03.345314+09:00",
+        "approver": "conductor",
+        "status": "COMPLETED"
+      },
+      "REV_6": {
+        "approved": true,
+        "approved_at": "2026-11-13T11:58:00.595558+09:00",
+        "approver": "user",
+        "status": "COMPLETED"
+      }
+    }
+  },
+  "open_questions": [],
+  "decisions": [],
+  "infrastructure": {
+    "git_commit": "-",
+    "remote_url": "-",
+    "container_status": "STOPPED",
+    "production_url": "-"
+  }
+}

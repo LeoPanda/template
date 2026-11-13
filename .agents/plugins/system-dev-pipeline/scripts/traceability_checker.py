@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-REQ_PATTERN = re.compile(r"\[(REQ-(?:F|NF)\d+(?:-\d+)?)\]")
+REQ_PATTERN = re.compile(r"\[(REQ-(?:F|NF)[A-Za-z0-9_-]+)\]")
 NEGATIVE_TEST_PATTERN = re.compile(r"(@test_type:\s*negative|abnormal|error|invalid|exception|fail|reject|boundary)", re.IGNORECASE)
 IGNORE_TEST_DIRS = {".git", "node_modules", "venv", ".venv", "__pycache__", "dist", "build", "coverage", ".agents"}
 TEST_FUNC_PATTERN = re.compile(r"^\s*(?:async\s+)?(?:def\s+test_|fn\s+test_)|^\s*(?:it|test)\(")
@@ -49,16 +49,21 @@ def find_requirements_file(root: Path) -> Path | None:
     for c in candidates:
         if c.is_file():
             return c
+    # 改訂計画書の探索 (docs/plans/*/00_*.md, docs/検討課題/**/00_*.md)
+    for p in sorted(root.glob("docs/plans/*/00_*.md"), reverse=True):
+        if p.is_file():
+            return p
+    for p in sorted(root.glob("docs/検討課題/**/00_*.md"), reverse=True):
+        if p.is_file():
+            return p
     return None
 
 def extract_requirements(req_file: Path) -> dict[str, Requirement]:
     reqs: dict[str, Requirement] = {}
     content = req_file.read_text(encoding="utf-8")
     for line in content.splitlines():
-        match = REQ_PATTERN.search(line)
-        if match:
+        for match in REQ_PATTERN.finditer(line):
             req_id = match.group(1)
-            # 抽出タイトル
             title = line.replace(f"[{req_id}]", "").strip(" -*#:")
             category = "Non-Functional" if "NF" in req_id else "Functional"
             if req_id not in reqs:

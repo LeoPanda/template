@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
@@ -6,6 +7,19 @@ class Settings(BaseSettings):
     APP_SESSION_TOKEN: str = "local-dev-token"
     DEBUG: bool = False
     DATABASE_URL: str = "sqlite:///./app.db"
+
+    @property
+    def resolved_database_url(self) -> str:
+        """ホスト/コンテナ環境自動適応型 Database URL リゾルバ (Core-Absorbed Resilience)"""
+        if self.DATABASE_URL.startswith("sqlite:///"):
+            raw_path = self.DATABASE_URL.replace("sqlite:///", "")
+            path_obj = Path(raw_path)
+            if not path_obj.parent.exists() and (str(path_obj).startswith("/data") or str(path_obj).startswith("/app/")):
+                fallback_dir = Path("data")
+                fallback_dir.mkdir(parents=True, exist_ok=True)
+                return f"sqlite:///{fallback_dir / path_obj.name}"
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+        return self.DATABASE_URL
 
     @field_validator("APP_SESSION_TOKEN")
     @classmethod

@@ -7,9 +7,9 @@ from db.session import get_db
 router = APIRouter()
 
 @router.get("/health")
-def health_check(db: Session = Depends(get_db)):
+def health_check(deep: bool = False, db: Session = Depends(get_db)):
     try:
-        # SQLite疎通確認
+        # SQLite疎通確認 (Deep Health Probe)
         db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
@@ -18,6 +18,7 @@ def health_check(db: Session = Depends(get_db)):
                 "connected": True,
                 "engine": "sqlite",
             },
+            "deep": deep,
         }
     except Exception as e:
         raise HTTPException(

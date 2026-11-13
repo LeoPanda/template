@@ -9,8 +9,11 @@ import hashlib
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
+import time
+import urllib.request
 from pathlib import Path
 
 STATE_JSON_PATH = Path("project_state.json")
@@ -286,6 +289,106 @@ def check_review_readiness(state: dict) -> list[str]:
         except Exception as e:
             violations.append(f"[READINESS-QA] metrics/qa_runtime_evidence.json の解析に失敗しました: {e}")
 
+    # 検査5: Stage 2 Live Invariant Probe (完全分離サブプロセス一時起動＆実DBクエリ疎通検証)
+    probe_violations = run_live_invariant_probe(root)
+    violations.extend(probe_violations)
+
+    return violations
+
+def run_live_invariant_probe(root: Path) -> list[str]:
+    """Stage 2: Live Invariant Probe - バックエンド独立プロセス一時起動＆実DBクエリ疎通検証"""
+    backend_dirs = [
+        (root / "backend" / "app" / "main.py", "backend.app.main:app", root),
+        (root / "backend" / "core" / "main.py", "core.main:app", root / "backend"),
+        (root / "backend" / "main.py", "backend.main:app", root),
+    ]
+    target_entry = None
+    for file_path, module_spec, cwd_dir in backend_dirs:
+        if file_path.is_file():
+            target_entry = (file_path, module_spec, cwd_dir)
+            break
+
+    if not target_entry:
+        return []
+
+    file_path, module_spec, cwd_dir = target_entry
+
+    probe_port = 8999
+    for p in range(8999, 9050):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("127.0.0.1", p)) != 0:
+                probe_port = p
+                break
+
+    env = os.environ.copy()
+    current_pythonpath = env.get("PYTHONPATH", "")
+    additional_paths = [str(root), str(root / "backend")]
+    env["PYTHONPATH"] = os.pathsep.join(additional_paths + ([current_pythonpath] if current_pythonpath else []))
+
+    cmd = [sys.executable, "-m", "uvicorn", module_spec, "--port", str(probe_port)]
+    process = None
+    violations = []
+    try:
+        process = subprocess.Popen(
+            cmd,
+            cwd=str(cwd_dir),
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        start_time = time.time()
+        timeout = 15.0
+        success = False
+        last_error = ""
+
+        probe_urls = [
+            f"http://127.0.0.1:{probe_port}/api/health?deep=true",
+            f"http://127.0.0.1:{probe_port}/api/internal/health?deep=true",
+            f"http://127.0.0.1:{probe_port}/health?deep=true"
+        ]
+
+        while time.time() - start_time < timeout:
+            ret = process.poll()
+            if ret is not None:
+                stderr_output = process.stderr.read()
+                last_error = f"プロセスが予期せず終了しました (Exit Code: {ret}):\n{stderr_output.strip()}"
+                break
+
+            for url in probe_urls:
+                try:
+                    req = urllib.request.Request(url, method="GET")
+                    with urllib.request.urlopen(req, timeout=1.0) as resp:
+                        if resp.status == 200:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            db_info = data.get("database", {})
+                            db_connected = db_info.get("connected", True) if isinstance(db_info, dict) else (db_info == "connected")
+                            if data.get("status") in ("healthy", "ok") and db_connected:
+                                success = True
+                                break
+                except Exception as e:
+                    last_error = str(e)
+            if success:
+                break
+            time.sleep(0.5)
+
+        if not success:
+            if not last_error and process.poll() is None:
+                last_error = "15秒以内に Deep Health Probe (HTTP 200 OK) に応答しませんでした (起動タイムアウト)。"
+            violations.append(f"[READINESS-PROBE] Live Invariant Probe (サーバー実動＆実DB疎通) に失敗しました:\n{last_error}")
+
+    except Exception as e:
+        violations.append(f"[READINESS-PROBE] Live Invariant Probe 実行中に例外が発生しました: {e}")
+    finally:
+        if process and process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2)
+
     return violations
 
 def cmd_verify_review_readiness(args):
@@ -296,7 +399,7 @@ def cmd_verify_review_readiness(args):
         for v in violations:
             print(f"  • {v}", file=sys.stderr)
         sys.exit(1)
-    print("✅ [READINESS PASS] 実機レビュー (REV-4) 移行準備検査をすべてクリアしました (Hard Gate, 文書衛生, モック解除, QA署名証跡)。")
+    print("✅ [READINESS PASS] 実機レビュー (REV-4) 移行準備検査をすべてクリアしました (Hard Gate, 文書衛生, モック解除, QA署名証跡, Live Invariant Probe)。")
     sys.exit(0)
 
 def normalize_phase_key(phase: str) -> str:
@@ -499,16 +602,17 @@ def scaffold_revision_plan(rid: str, title: str):
   - [ ] 差分基本設計書起草（技術・スキーマ・ロジック・画面仕様書）
   - [ ] Executable Golden Fixtures (`tests/fixtures/golden/`) 配置
   - [ ] 基本設計レビュー (`dev-review-arch` / `traceability_checker.py --mode design`) PASS
-- [ ] **REV-2: 実装・静的検証・Stage 1.5 スモーク (Implementation, Hard Gate & Smoke)**
+- [ ] **REV-2: 実装・静的検証・Stage 1 スモーク (Implementation, Hard Gate & Smoke)**
   - [ ] バックエンド/フロントエンド差分実装（行数制限 2段階緩衝帯 250/350, 400/550 遵守、空実装排除）
   - [ ] OpenAPI型同期 (Contract-First MSW)
-  - [ ] Stage 1.5 インプロセス実I/O・物理ファイル生成＆パーサー検証
+  - [ ] Stage 1 インプロセス実I/O・物理ファイル生成＆パーサー検証
   - [ ] コミット前 Hard Gate (`python3 scripts/harness_guard.py --all`) PASS
-- [ ] **REV-3: 自動テスト・実結合E2E・感覚センサー検証 (Automated E2E & Sensory)**
+- [ ] **REV-3: 自動テスト・実結合E2E・Stage 2 Live Probe 検証 (Automated E2E & Live Probe)**
   - [ ] シナリオテスト拡充（異常系比率20%以上、3階層深層アサーション、トートロジー排除）
-  - [ ] Stage 2 モックOFF (`VITE_ENABLE_MOCK=false`) 実データ一気通貫E2E検証
+  - [ ] Stage 3 前提モックOFF (`VITE_ENABLE_MOCK=false`) 実データ一気通貫E2E検証
   - [ ] ブラウザ感覚センサー検証（コンソールエラー0件、WCAG AA 4.5:1）
   - [ ] `traceability_checker.py --mode full` PASS & `qa_runtime_evidence.json` 出力
+  - [ ] Stage 2 Live Probe 検証 (`python3 scripts/state_manager.py verify-review-readiness`) PASS
 - [ ] **REV-4: 開発サーバー起動・ユーザー実機レビュー・改修 (User Live Review & Refinement)**
   - [ ] 実結合モード開発サーバー（Docker / Uvicorn + Vite dev / Tauri dev）起動
   - [ ] ユーザーへの実機動作デモ提示と実機テストレビュー要請
@@ -536,8 +640,8 @@ def scaffold_revision_plan(rid: str, title: str):
 
     step_templates = [
         ("REV-1_要件・設計・契約フィクスチャ精査手順書.md", "REV-1: 要件定義・基本設計・Golden Fixture・RTM設計カバレッジ検証の手順"),
-        ("REV-2_実装・静的検証・Stage1.5スモーク手順書.md", "REV-2: 実装・2段階行数制限・harness_guard・Stage 1.5実I/Oスモーク検証の手順"),
-        ("REV-3_テスト・実結合E2E・感覚センサー検証手順書.md", "REV-3: シナリオテスト・モックOFF実結合E2E・感覚センサー・qa_runtime_evidence検証の手順"),
+        ("REV-2_実装・静的検証・Stage1スモーク手順書.md", "REV-2: 実装・2段階行数制限・harness_guard・Stage 1実I/Oスモーク検証の手順"),
+        ("REV-3_テスト・実結合E2E・Stage2LiveProbe検証手順書.md", "REV-3: シナリオテスト・モックOFF実結合E2E・感覚センサー・Stage 2 Live Probe検証の手順"),
         ("REV-4_開発サーバー起動・ユーザー実機レビュー・改修手順書.md", "REV-4: 開発サーバー起動・ユーザー実機テストレビュー・対話的改修の手順"),
         ("REV-5_本番総合監査・成果物ビルド手順書.md", "REV-5: コード/システム総合レビュー合格および本番バイナリ/成果物ビルドの手順"),
         ("REV-6_メトリクス・知見昇格・リリース手順書.md", "REV-6: メトリクス集計・知見昇格・Invariants検証・リリースの手順"),
@@ -655,8 +759,8 @@ def cmd_start_revision(args):
     rev["active_revision_id"] = args.id
     rev["rev_phases"] = {
         "REV_1": {"title": "要件・設計・契約フィクスチャ精査", "status": "IN_PROGRESS"},
-        "REV_2": {"title": "実装・静的検証・Stage 1.5 スモーク", "status": "PENDING"},
-        "REV_3": {"title": "自動テスト・実結合E2E・感覚センサー検証", "status": "PENDING"},
+        "REV_2": {"title": "実装・静的検証・Stage 1 スモーク", "status": "PENDING"},
+        "REV_3": {"title": "自動テスト・実結合E2E・Stage 2 Live Probe 検証", "status": "PENDING"},
         "REV_4": {"title": "開発サーバー起動・ユーザー実機レビュー・改修", "status": "PENDING", "approved": False, "approved_at": None, "approver": None},
         "REV_5": {"title": "本番総合監査・成果物ビルド", "status": "PENDING"},
         "REV_6": {"title": "メトリクス・知見昇格・リリース", "status": "PENDING"}

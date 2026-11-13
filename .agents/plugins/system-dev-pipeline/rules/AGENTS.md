@@ -1,4 +1,4 @@
-# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V3.0.0)
+# AI駆動システム開発プロセス標準規約 (System Dev Pipeline Rule V3.1.0)
 
 本プロジェクトおよび開発パイプラインにおいては、以下の開発・運用規約に従うものとする。
 
@@ -25,7 +25,7 @@
 1. 👑 **プロジェクトコンダクター (`conductor`) [Main Agent]**:
    - プロジェクト進行管理、ユーザー対話、進行フェーズ（PHASE 1〜8）および改訂サイクル（`REV-1`〜`REV-6`）の厳格管理。非開発モード時のパス監視と自律昇格（`start-revision`）。
    - `scripts/state_manager.py` による `project_state.json` 一元更新（**Single Writer 原則**）および `PROJECT_STATE.md` の決定論的自動生成。
-   - 初期スケルトン展開、環境変数設定、標準コマンドシーケンス（Alembic/Codegen/CI/Hard Gate）の統括実行。特に **`REV-4` 突入前の `verify-review-readiness` 実行義務**、および開発サーバー起動・ユーザー実機レビュー要請・改修オーケストレーション・承認記録を担当。
+   - 初期スケルトン展開、環境変数設定、標準コマンドシーケンス（Alembic/Codegen/CI/Hard Gate）の統括実行。特に **`REV-4` 突入前の `verify-review-readiness`（Stage 2 Live Invariant Probe: 独立サブプロセス一時起動・Deep Health実クエリ疎通・stderr例外捕捉）実行義務**、および開発サーバー起動・ユーザー実機レビュー要請・改修オーケストレーション・承認記録を担当。
    - 専任コマンド実行: Git操作（`dev-git-init`, `dev-git-release`）、本番デプロイ、DB強制上書き、コンテナ起動停止。
    - **【コード・設計書直接編集原則禁止】**: コンダクターが `docs/設計書/`、`backend/`、`frontend/` 配下のファイルを直接編集することを原則禁止する。設計変更は必ず `architect`、実装は `backend-engineer` または `ui-designer` へ委譲しなければならない。
 2. 📐 **設計・立案スペシャリスト (`architect`) [Subagent]**:
@@ -59,13 +59,19 @@
 1. **Hard Gate 物理遮断**: `harness_guard.py` によりコミット前・CIで機械遮断。行数制限は2段階緩衝帯（FE 250/350行、BE 400/550行）を適用し、空実装・縮退実装（`pass`, `...`, `NotImplementedError`, 空JSXハンドラ）を物理遮断する。
 2. **要件トレーサビリティ機械検証 & テスト関数直結バインド**:
    - 有効テスト関数スコープ直結の `[REQ-*]` バインド、浅いアリバイテストの排除、動的カバレッジ連携、異常系比率20%以上を `traceability_checker.py` で機械検証する。
-3. **Dual-Stage Testing Gate**:
-   - Contract-First MSW ➔ Stage 1.5 インプロセス実I/O・物理ファイル生成スモーク ➔ Stage 2 モックOFF実サーバー結合E2E。
+3. **3ステージテスト体系 (Three-Stage Testing Architecture)**:
+   - **Stage 1 (Unit & Contract)**: 単体テスト、Pydantic DTO検証、FastAPI `TestClient` によるインプロセス実I/O・OpenAPIスキーマ検証。
+   - **Stage 2 (Readiness Live Probe)**: `verify-review-readiness` による完全分離サブプロセス一時起動・実HTTP疎通・DB実クエリ検証（REV-4突入の絶対不変条件）。
+   - **Stage 3 (Full-Stack E2E & Sensorial)**: フロント・バック同時稼働下での実結合E2E、感覚センサー（コンソールエラー0件、WCAG AA 4.5:1）検証。
 4. **ブラウザ感覚センサー**: Chrome DevTools MCP により実ブラウザのコンソールエラー 0件、WCAG AA コントラスト比（4.5:1）、A11yツリーを自動計測・検証する。
 5. **型定義自動同期 & Dual Provisioning 原則**: OpenAPI ➔ TypeScript Codegen 完全利用。`.env.example` と `.env` の自動同期・補完。
 6. **動的レンダリング O(1) キャッシュ**: フレーム駆動・動的SVG描画時は描画パラメータをキーとするインメモリキャッシュを配備し、メモリリークを未然防止する。
 7. **モック出力の物理隔離**: テスト用・開発用モックコード（`mockUsers`, `dummyData`, `generate_mock_*`, `dummy_*`, `Mock*`, メディアダミー生成記述等）の本番コード領域（`frontend/src/` の `src/mocks/` 外、`backend/` の `tests/` 外、`src-tauri/`）への直接混入およびサイレントモックフォールバック（`except` 節でのモック返却）を物理遮断する。
 8. **ドキュメント精査の2段階分離**: ドキュメントの品質保証は「第1段階：文書衛生整理（Current配下の一時ファイル・バージョン番号付きファイル排除、未整理ドキュメントの一元隔離、REV-3完了ゲート）」と「第2段階：対話的改修差分反映と相互整合性監査（要件・画面・ロジック・スキーマ整合性担保、REV-5完了ゲート）」に責務分離して実施する。
+9. **環境適応耐性 (Core-Absorbed Resilience) の標準化**:
+   - ホストOSとDockerコンテナ間でのパス乖離（`/app/data` 等）は、テスト側（`conftest.py` 等）で環境変数を書き換えてマスキングすることを厳禁とする。本体コード側へ `Smart Database URL & Path Resolver`（自動フォールバック・親ディレクトリ自動生成）を標準配備し、本体自身の環境適応力によりパス乖離を決定論的に吸収する。
+10. **起動時フェイルファスト検証 (Fail-Fast Lifespan Probe) の義務化**:
+   - バックエンド起動シーケンス（FastAPI `lifespan` フック等）において、初期DB接続疎通を強制検証する。設定不備やパーミッション不正が存在する場合はリクエスト待機に入らず起動時に即座に例外停止させる。また、`/api/health?deep=true` エンドポイントによる実DBクエリ検証を標準配備する。
 
 ### 4.2 第2層: システム展開プロファイル (Profile A〜E) ＆ Capability Traits (2.5層)
 - **Core Profile (A〜E)**: Profile A (サーバーレス極小コストWeb型 / ゴールデンパス), Profile B (Web SSR / RDB型), Profile C (静的MPA / 超軽量CLI), Profile D (PCローカルデスクトップ型 / 二段階ハイブリッド), Profile E (AI Agent Skill / PKM 自動化CLI)。
@@ -121,9 +127,9 @@
 2. **改訂ライフサイクル (REV-1〜REV-6 標準パイプライン)**:
    - 初期開発完了後の機能追加・Hotfixは、`state_manager.py start-revision` による計画スケルトン自動展開を出発点とし、以下の6段階標準改訂パイプラインを厳守する:
      - `REV-1`: 要件・設計・契約フィクスチャ精査（差分要件 `REQ-*`、Golden Fixtures、RTM設計カバレッジ 100%）
-     - `REV-2`: 実装・静的検証・Stage 1.5 スモーク（2段階行数制限、OpenAPI型同期、Stage 1.5 実I/Oスモーク、`harness_guard.py` PASS）
-     - `REV-3`: 自動テスト・実結合E2E・感覚センサー検証（RTM full、Stage 2 モックOFF実結合E2E、感覚センサー、`qa_runtime_evidence.json` 発行）
-     - `REV-4`: 開発サーバー起動・ユーザー実機レビュー・改修（実結合開発サーバー起動、ユーザー実機テストレビュー、対話的改修、ユーザー承認記録）
+     - `REV-2`: 実装・静的検証・Stage 1 スモーク（2段階行数制限、OpenAPI型同期、Stage 1 実I/Oスモーク、`harness_guard.py` PASS）
+     - `REV-3`: 自動テスト・実結合E2E・Stage 2 Live Probe 検証（RTM full、Stage 3 前提モックOFF実結合E2E、感覚センサー、`qa_runtime_evidence.json` 発行、Stage 2 Live Probe PASS）
+     - `REV-4`: 開発サーバー起動・ユーザー実機レビュー・改修（Live Probe PASS インターロック確認、実結合開発サーバー起動、ユーザー実機テストレビュー、対話的改修、ユーザー承認記録）
      - `REV-5`: 本番総合監査・成果物ビルド（コード/システム総合レビュー合格、本番成果物ビルド）
      - `REV-6`: メトリクス・知見昇格・リリース（定量メトリクス集計、知見昇格、Invariants Gate 通過確認）
    - 改訂クローズ時、`state_manager.py complete-revision` の 5大 Invariants Gate（成果物実在、メトリクス算出済み、未処理知見ゼロ、**REV-4 ユーザー承認記録済**、**qa_runtime_evidence 検証済**）を機械検証し、未達時は自動遮断する。

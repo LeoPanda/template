@@ -1,8 +1,8 @@
 # Profile D 詳細設計書 (Profile D Desktop Application Detailed Specification)
 
-文書バージョン: 3.0.1  
-作成日: 2026-10-15 (改訂日: 2026-11-10)  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.1 (`APP_VERSION=3.0.1`)  
+文書バージョン: 3.1.0  
+作成日: 2026-10-15 (改訂日: 2026-11-13)  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.1.0 (`APP_VERSION=3.1.0`)  
 ステータス: 正式設計書 (Approved Specification)  
 関連文書:
 - [V2.6改変計画書.md](../v2.6/V2.6改変計画書.md)
@@ -90,8 +90,8 @@ flowchart TB
     UI -->|設定・ステート永続化| StorageAdapter
     StorageAdapter -->|Tauri Store 経由| FS
     
-    SidecarMgr -->|1. プロセス起動 + トークン/ポート注入| FastAPI
-    SidecarMgr -->|2. 死活監視・SIGTERM/SIGKILL制御| FastAPI
+    SidecarMgr -->|"1. プロセス起動 + トークン/ポート注入"| FastAPI
+    SidecarMgr -->|"2. 死活監視・SIGTERM/SIGKILL制御"| FastAPI
     SecToken -.->|シークレット共有| SidecarMgr
     SecToken -.->|シークレット注入| UI
 
@@ -546,3 +546,14 @@ Profile D は、Web技術の俊敏性とネイティブアプリの圧倒的な�
 - [ ] Sidecar 起動時に動的トークンを発行し、APIクライアントから付与しているか？
 - [ ] アプリ終了時に Sidecar が確実に kill されることを確認したか？
 - [ ] 日常のテストを Docker Compose 上で自動実行したか？
+
+---
+
+## 11. ドキュメント改定履歴
+
+| 対象バージョン | 改定日 | 改訂依頼番号 | 改定内容 |
+| :--- | :--- | :--- | :--- |
+| 2.6.0 | 2026-10-26 | - | 初回Current正本化 |
+| 3.0.0 | 2026-11-10 | PLAN-V300-001 | 2段階行数制限、Contract-First MSW、Golden Fixtures、Stage 1.5/2テスト仕様策定 |
+| 3.0.1 | 2026-11-10 | PLAN-V301-001 | 本番コードモック完全排除(HG-002)、REV-4事前物理検査ゲート(REQ-F-301-03) |
+| 3.1.0 | 2026-11-13 | PLAN-V310-001 | Smart Database URL & Path Resolver、Fail-Fast Lifespan、/api/health?deep=true 標準仕様策定 (REQ-F-310-01, REQ-F-310-02) |

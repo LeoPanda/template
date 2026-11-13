@@ -1,7 +1,7 @@
 {
   "name": "system-dev-pipeline",
-  "version": "3.0.1",
-  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V3.0.1（ハーネス死角克服・モック管理・証跡機械生成・Pre-Review Readiness Gate新設・ドキュメント2段階分離・2.5層プロファイル体系）",
+  "version": "3.1.0",
+  "description": "Antigravity環境におけるAI駆動システム開発ライフサイクル全自動化プラグイン V3.1.0（Live Invariant Probe・環境適応耐性スケルトン・起動時フェイルファスト・3ステージテスト体系統合）",
   "author": "Antigravity Workflow Automation",
   "agents": [
     "conductor",

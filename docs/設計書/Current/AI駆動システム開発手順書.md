@@ -1,8 +1,8 @@
 # AI駆動システム開発手順書（軽量・実行契約駆動・6段階改訂パイプライン準拠版）
 
-文書バージョン: 3.0.1  
-改定日: 2026-11-10  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.1 (`APP_VERSION=3.0.1`)  
+文書バージョン: 3.1.0  
+改定日: 2026-11-13  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.1.0 (`APP_VERSION=3.1.0`)  
 ステータス: 正式改訂版 (Current 正本)  
 関連文書:
 - [AI駆動システム開発フェーズ定義書.md](./AI駆動システム開発フェーズ定義書.md)
@@ -146,21 +146,23 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    R1["REV-1: 要件・設計・契約精査<br/>(Golden Fixtures & RTM設計)"] --> R2["REV-2: 実装・静的検証<br/>(Stage 1.5 スモーク & Hard Gate HG-002)"]
-    R2 --> R3["REV-3: テスト・実結合E2E<br/>(モックOFF & 証跡自動生成 & 衛生整理)"]
-    R3 --> R4["REV-4: 実機レビュー・改修<br/>★ 事前検査PASS & ユーザー実機承認ゲート"]
+    R1["REV-1: 要件・設計・契約精査<br/>(差分要件 REQ-F-310-01〜03 & Golden Fixtures)"] --> R2["REV-2: 実装・静的検証<br/>(Stage 1 スモーク & Hard Gate HG-002)"]
+    R2 --> R3["REV-3: テスト・実結合E2E<br/>(モックOFF & Stage 2 Live Probe PASS)"]
+    R3 --> R4["REV-4: 実機レビュー・改修<br/>★ Live Probe インターロック & ユーザー承認"]
     R4 --> R5["REV-5: 総合監査・ビルド<br/>(第2段階精査 & 3大レビュー & 成果物実在)"]
     R5 --> R6["REV-6: 知見昇格・リリース<br/>(Hub昇格 & 証跡検証 INV-QA-01 & Git Release)"]
 ```
 
 1. **REV-1: 要件・設計・契約フィクスチャ精査**:
-   - `state_manager.py start-revision` で起票。差分要件定義、4大基本設計書更新、`tests/fixtures/golden/` 配置、`dev-review-arch` PASS。
-2. **REV-2: 実装・静的検証・Stage 1.5 スモーク**:
-   - 2段階行数制限（250/350行、400/550行）、本番コードモック完全排除（`HG-002`）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1.5 実I/Oスモークテスト、`harness_guard.py` PASS。
-3. **REV-3: 自動テスト・実結合E2E・感覚センサー検証**:
-   - テスト関数直結 RTM 検証、Stage 2 モックOFF実データ一気通貫E2E検証、感覚センサー検証、署名付き動的証跡（`metrics/qa_runtime_evidence.json`）自動生成。第1段階ドキュメント衛生・構造整理を実施し、`state_manager.py verify-review-readiness` PASS を確認。
+   - `state_manager.py start-revision` で起票。差分要件定義（`REQ-F-310-01`〜`03`）、4大基本設計書更新、`tests/fixtures/golden/` 配置、`dev-review-arch` PASS。
+2. **REV-2: 実装・静的検証・Stage 1 スモーク**:
+   - 2段階行数制限（250/350行、400/550行）、本番コードモック完全排除（`HG-002`）、空実装遮断（`HG-010`）、OpenAPI型同期、Stage 1 (Unit & Contract) 実I/Oスモークテスト、`harness_guard.py` PASS。
+3. **REV-3: 自動テスト・実結合E2E・Stage 2 Live Probe 検証**:
+   - テスト関数直結 RTM 検証、実結合E2E検証、感覚センサー検証、動的証跡（`metrics/qa_runtime_evidence.json`）自動生成。第1段階ドキュメント衛生・構造整理。
+   - **Stage 2 Live Probe 検証手順**: `python3 scripts/state_manager.py verify-review-readiness` を実行。バックエンドが独立サブプロセスとして一時起動し、`/api/health?deep=true` による実DB疎通（HTTP 200 OK）が確認され、ALL PASS となることを検証する。
 4. **REV-4: 開発サーバー起動・ユーザー実機レビュー・対話的改修**:
-   - 前提条件として事前検査ゲート（`state_manager.py verify-review-readiness`）PASS を確認後、実結合開発サーバーを起動し、ユーザーへ実機テストレビューを要請。対話的改修ループを経て、ユーザー実機承認（`state_manager.py record-approval --phase REV_4`）を記録。
+   - **インターロック確認手順**: 前提条件として Stage 2 Live Probe（`state_manager.py verify-review-readiness`）PASS を確認。未通過の場合は `set-phase REV_4` が拒否される。
+   - 実結合開発サーバーを起動し、Stage 3 フルスタック動作確認を提示。ユーザー実機テストレビュー要請、対話的改修ループ、ユーザー実機承認（`state_manager.py record-approval --phase REV_4`）を記録。
 5. **REV-5: 本番総合監査・成果物ビルド**:
    - 第2段階ドキュメント意味的相互整合性精査、コード品質レビュー（`dev-review-code`: CLEAN）、システム総合レビュー（`dev-review-system`: RELEASE APPROVED）、本番成果物の物理ビルド。
 6. **REV-6: メトリクス・知見昇格・リリース**:
@@ -175,3 +177,4 @@ flowchart LR
 | 2.6.0 | 2026-10-26 | - | 初回Current正本化 |
 | 3.0.0 | 2026-11-10 | PLAN-V300-001 | 軽量・実行契約駆動パイプライン手順化 (Golden Fixtures、Stage 1.5/2、6段階改訂 REV-1〜REV-6、自律昇格) |
 | 3.0.1 | 2026-11-10 | PLAN-V301-001 | 本番コードモック完全排除(HG-002)、署名付き動的証跡生成・状態台帳改ざん検証(REQ-F-301-02)、2段階ドキュメント精査・REV-4事前物理検査ゲート(REQ-F-301-03) |
+| 3.1.0 | 2026-11-13 | PLAN-V310-001 | Stage 2 Live Probe 検証手順、REV-4 起動前インターロック確認手順、3ステージテスト体系統合の反映 |

@@ -1,8 +1,8 @@
 # Profile A 詳細設計書 (Profile A Golden Path Detailed Specification)
 
-文書バージョン: 3.0.1  
-作成日: 2026-10-25 (改訂日: 2026-11-10)  
-対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.0.1 (`APP_VERSION=3.0.1`)  
+文書バージョン: 3.1.0  
+作成日: 2026-10-25 (改訂日: 2026-11-13)  
+対象バージョン: AI駆動システム開発ライフサイクルテンプレート V3.1.0 (`APP_VERSION=3.1.0`)  
 ステータス: 正式設計書 (Approved Specification)  
 関連文書:
 - [V2.6改変計画書.md](../v2.6/V2.6改変計画書.md)
@@ -453,6 +453,88 @@ class Item(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 ```
 
+### 5.4 環境適応耐性 (Core-Absorbed Resilience) と起動時フェイルファスト仕様
+1. **Smart Database URL & Path Resolver (`core/config.py`)**:
+   - ホストOSとDockerコンテナ間でのパス乖離を、テスト側ではなく**本体コード側が自律解決**する。
+   - `DATABASE_URL` にコンテナ絶対パス（例: `sqlite:////app/data/app.db`）が設定されている場合でも、ホストOS上で `/app/data` が存在しない場合は、プロジェクトルート相対の `data/app.db`（`sqlite:///./data/app.db`）へ安全にフォールバックする。
+   - 解決先の親ディレクトリ（`data/`）が存在しない場合、`os.makedirs(..., exist_ok=True)` で自動生成する。
+   - すべてのDBセッションおよびマイグレーションは `settings.resolved_database_url` を単一ソースとして参照し、テストフィクスチャによるパス書き換え・マスキング動機を根絶する。
+
+```python
+# backend/core/config.py
+from pathlib import Path
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    DATABASE_URL: str = "sqlite:////app/data/app.db"
+
+    @property
+    def resolved_database_url(self) -> str:
+        """ホスト/コンテナ環境自動適応型 Database URL リゾルバ"""
+        if self.DATABASE_URL.startswith("sqlite:///"):
+            raw_path = self.DATABASE_URL.replace("sqlite:///", "")
+            path_obj = Path(raw_path)
+            # コンテナ絶対パス (/app/data/...) がホスト上で存在しない場合
+            if not path_obj.parent.exists() and str(path_obj).startswith("/app/"):
+                fallback_dir = Path("data")
+                fallback_dir.mkdir(parents=True, exist_ok=True)
+                return f"sqlite:///{fallback_dir / path_obj.name}"
+            # 通常パスの親ディレクトリ自動作成
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+        return self.DATABASE_URL
+```
+
+2. **起動時フェイルファスト検証 (Fail-Fast Lifespan Probe) (`core/main.py`)**:
+   - アプリケーション起動時（FastAPI `lifespan` コンテキスト）において、SQLAlchemy `engine.connect()` による初期DB接続テストを強制実行する。
+   - DB未接続、パーミッション不正、マイグレーション未完了がある場合、リクエスト待機に入らず起動シーケンス内で即座に致命的例外としてプロセス停止させる。
+
+```python
+# backend/core/main.py (lifespan)
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from sqlalchemy import text
+from db.session import engine
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 起動時フェイルファスト検証 (Fail-Fast Lifespan Probe)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        import sys
+        print(f"FATAL: Database connection failed during startup lifespan probe: {e}", file=sys.stderr)
+        raise e
+    yield
+    # シャットダウン処理
+```
+
+3. **クリティカルパス実HTTPプローブ (`/api/health?deep=true`)**:
+   - `GET /api/health` エンドポイントにおいて、クエリパラメータ `?deep=true` が指定された場合、実DBに対して `SELECT 1` を実行し、接続性を検証したJSONを返却する。
+
+```python
+# backend/api/endpoints/health.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from db.session import get_db
+
+router = APIRouter()
+
+@router.get("/health")
+def health_check(deep: bool = False, db: Session = Depends(get_db)):
+    if not deep:
+        return {"status": "healthy"}
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database probe failed: {str(e)}"
+        )
+```
+
 ---
 
 ## 6. セキュリティ & 認可アーキテクチャ (IAP JWT 二重防御)
@@ -859,3 +941,14 @@ jobs:
    [V2.3システムプロファイル構造設計書.md](../V2.3/V2.3システムプロファイル構造設計書.md) および [V2.4改変計画書.md](../v2.4/V2.4改変計画書.md) と完全に整合していること。
 3. **相対パス規約の遵守**:
    すべての関連文書へのリンクが相対パスで記述されていること。
+
+---
+
+## 14. ドキュメント改定履歴
+
+| 対象バージョン | 改定日 | 改訂依頼番号 | 改定内容 |
+| :--- | :--- | :--- | :--- |
+| 2.6.0 | 2026-10-26 | - | 初回Current正本化 |
+| 3.0.0 | 2026-11-10 | PLAN-V300-001 | 2段階行数制限、Contract-First MSW、Golden Fixtures、Stage 1.5/2テスト仕様策定 |
+| 3.0.1 | 2026-11-10 | PLAN-V301-001 | 本番コードモック完全排除(HG-002)、REV-4事前物理検査ゲート(REQ-F-301-03) |
+| 3.1.0 | 2026-11-13 | PLAN-V310-001 | Smart Database URL & Path Resolver、Fail-Fast Lifespan、/api/health?deep=true 標準仕様策定 (REQ-F-310-01, REQ-F-310-02) |
